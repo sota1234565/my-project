@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, CircleMarker } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { GREEN_TYPES } from '../data/greenItems';
 
@@ -9,7 +11,7 @@ const CONDITION_COLORS = {
   poor: '#f87171',
 };
 
-const NEARBY_RADIUS_M = 500; // 500m以内を「近く」とする
+const NEARBY_RADIUS_M = 500;
 
 function getDistance(lat1, lng1, lat2, lng2) {
   const R = 6371000;
@@ -18,6 +20,38 @@ function getDistance(lat1, lng1, lat2, lng2) {
   const a = Math.sin(dLat / 2) ** 2 +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function makeEmojiIcon(emoji, isSelected, isNearby, condition) {
+  const condColor = CONDITION_COLORS[condition] || CONDITION_COLORS.healthy;
+  const size = isSelected ? 52 : 40;
+  const border = isSelected
+    ? `3px solid #fff`
+    : isNearby
+    ? `2.5px solid #3b82f6`
+    : `2px solid rgba(255,255,255,0.8)`;
+  const shadow = isSelected
+    ? '0 4px 16px rgba(0,0,0,0.35)'
+    : '0 2px 8px rgba(0,0,0,0.22)';
+
+  return L.divIcon({
+    className: '',
+    html: `
+      <div style="
+        width:${size}px;height:${size}px;
+        border-radius:50%;
+        background:${condColor};
+        border:${border};
+        box-shadow:${shadow};
+        display:flex;align-items:center;justify-content:center;
+        font-size:${isSelected ? 24 : 20}px;
+        transition:all 0.2s;
+        ${isSelected ? 'transform:scale(1.15)' : ''}
+      ">${emoji}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -(size / 2 + 4)],
+  });
 }
 
 function FlyTo({ item }) {
@@ -95,52 +129,70 @@ export default function GreenMap({ items, selectedItem, onSelectItem }) {
           </CircleMarker>
         )}
 
-        {/* 緑地マーカー */}
-        {items.map((item) => {
-          const typeInfo = GREEN_TYPES[item.type];
-          const isSelected = selectedItem?.id === item.id;
-          const isNearby = userPos && getDistance(userPos[0], userPos[1], item.location.lat, item.location.lng) <= NEARBY_RADIUS_M;
-          return (
-            <CircleMarker
-              key={item.id}
-              center={[item.location.lat, item.location.lng]}
-              radius={isSelected ? 16 : isNearby ? 13 : 11}
-              pathOptions={{
-                color: isSelected ? '#ffffff' : isNearby ? '#3b82f6' : 'rgba(255,255,255,0.6)',
-                fillColor: typeInfo.color,
-                fillOpacity: isSelected ? 1 : 0.85,
-                weight: isSelected ? 3 : isNearby ? 2.5 : 1.5,
-              }}
-              eventHandlers={{ click: () => onSelectItem(item) }}
-            >
-              <Popup className="custom-popup">
-                <div className="map-popup">
-                  <div className="popup-type" style={{ color: typeInfo.color }}>
-                    {typeInfo.emoji} {typeInfo.label}
-                    {isNearby && <span className="nearby-badge"> 📍 近く</span>}
+        {/* 緑地マーカー（クラスタリング） */}
+        <MarkerClusterGroup
+          chunkedLoading
+          maxClusterRadius={50}
+          showCoverageOnHover={false}
+          iconCreateFunction={(cluster) => {
+            const count = cluster.getChildCount();
+            return L.divIcon({
+              className: '',
+              html: `<div style="
+                width:44px;height:44px;border-radius:50%;
+                background:linear-gradient(135deg,#2d6a4f,#52b788);
+                color:white;font-size:0.85rem;font-weight:800;
+                display:flex;align-items:center;justify-content:center;
+                box-shadow:0 3px 10px rgba(45,106,79,0.45);
+                border:2.5px solid white;
+              ">${count}</div>`,
+              iconSize: [44, 44],
+              iconAnchor: [22, 22],
+            });
+          }}
+        >
+          {items.map((item) => {
+            const typeInfo = GREEN_TYPES[item.type];
+            const isSelected = selectedItem?.id === item.id;
+            const isNearby = userPos && getDistance(userPos[0], userPos[1], item.location.lat, item.location.lng) <= NEARBY_RADIUS_M;
+            return (
+              <Marker
+                key={item.id}
+                position={[item.location.lat, item.location.lng]}
+                icon={makeEmojiIcon(typeInfo.emoji, isSelected, isNearby, item.condition)}
+                eventHandlers={{ click: () => onSelectItem(item) }}
+                zIndexOffset={isSelected ? 1000 : 0}
+              >
+                <Popup className="custom-popup">
+                  <div className="map-popup">
+                    {item.photo && (
+                      <img src={item.photo} alt={item.name} style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '8px', marginBottom: '6px' }} />
+                    )}
+                    <div className="popup-type" style={{ color: typeInfo.color }}>
+                      {typeInfo.emoji} {typeInfo.label}
+                      {isNearby && <span className="nearby-badge"> 📍 近く</span>}
+                    </div>
+                    <div className="popup-name">{item.name}</div>
+                    <div className="popup-address">📍 {item.location.address}</div>
+                    <div className="popup-stats">
+                      <span className={`popup-condition condition-${item.condition}`}>
+                        {item.condition === 'healthy' ? '健全' : item.condition === 'needs_care' ? '要ケア' : '不良'}
+                      </span>
+                      <span className="popup-supporters">💚 {item.supporters.length}</span>
+                    </div>
+                    <button className="popup-detail-btn" onClick={() => onSelectItem(item)}>
+                      詳細を見る →
+                    </button>
                   </div>
-                  <div className="popup-name">{item.name}</div>
-                  <div className="popup-address">📍 {item.location.address}</div>
-                  <div className="popup-stats">
-                    <span className={`popup-condition condition-${item.condition}`}>
-                      {item.condition === 'healthy' ? '健全' : item.condition === 'needs_care' ? '要ケア' : '不良'}
-                    </span>
-                    <span className="popup-supporters">💚 {item.supporters.length}</span>
-                  </div>
-                  <button className="popup-detail-btn" onClick={() => onSelectItem(item)}>
-                    詳細を見る →
-                  </button>
-                </div>
-              </Popup>
-            </CircleMarker>
-          );
-        })}
+                </Popup>
+              </Marker>
+            );
+          })}
+        </MarkerClusterGroup>
       </MapContainer>
 
       {/* 現在地ボタン */}
-      <button className="locate-btn" onClick={handleLocate} title="現在地を表示">
-        📍
-      </button>
+      <button className="locate-btn" onClick={handleLocate} title="現在地を表示">📍</button>
 
       {/* 近くの緑地パネル */}
       {userPos && nearbyItems.length > 0 && (
@@ -164,19 +216,16 @@ export default function GreenMap({ items, selectedItem, onSelectItem }) {
           <div className="nearby-title">📍 半径{NEARBY_RADIUS_M}m以内に緑地はありません</div>
         </div>
       )}
-
       {locError && (
-        <div className="nearby-panel" style={{ color: '#e63946' }}>
-          ⚠️ 現在地を取得できませんでした
-        </div>
+        <div className="nearby-panel" style={{ color: '#e63946' }}>⚠️ 現在地を取得できませんでした</div>
       )}
 
       <div className="map-legend">
         <div className="legend-title">凡例</div>
         {Object.entries(GREEN_TYPES).map(([key, val]) => (
           <div key={key} className="legend-item">
-            <div className="legend-dot" style={{ background: val.color }} />
-            <span>{val.emoji} {val.label}</span>
+            <span style={{ fontSize: '1rem' }}>{val.emoji}</span>
+            <span>{val.label}</span>
           </div>
         ))}
         <div className="legend-divider" />
@@ -187,10 +236,6 @@ export default function GreenMap({ items, selectedItem, onSelectItem }) {
         <div className="legend-item">
           <div className="legend-dot" style={{ background: CONDITION_COLORS.needs_care }} />
           <span>要ケア</span>
-        </div>
-        <div className="legend-item">
-          <div className="legend-dot" style={{ background: '#3b82f6' }} />
-          <span>現在地付近</span>
         </div>
       </div>
     </div>
