@@ -888,6 +888,7 @@ body {
 .gps-error { margin-top: 0.4rem; font-size: 0.8rem; color: var(--red); }
 .location-map-wrap { border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; }
 .map-tap-hint { text-align: center; font-size: 0.75rem; color: var(--text-muted); padding: 0.3rem; background: var(--green-50); }
+.address-loading { font-size: 0.75rem; color: var(--text-muted); font-weight: normal; }
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 5px; }

@@ -4,13 +4,27 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { GREEN_TYPES } from '../data/greenItems';
 
-// Leafletのデフォルトアイコン修正
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
+
+async function reverseGeocode(lat, lng) {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=ja`,
+      { headers: { 'User-Agent': 'NiwaGokoro-App' } }
+    );
+    const data = await res.json();
+    const a = data.address || {};
+    const parts = [a.prefecture, a.city || a.town || a.village, a.suburb || a.neighbourhood, a.road].filter(Boolean);
+    return parts.join('') || data.display_name || '';
+  } catch {
+    return '';
+  }
+}
 
 function LocationPicker({ onPick }) {
   useMapEvents({
@@ -35,17 +49,20 @@ export default function AddGreenForm({ onAdd, onClose }) {
     tags: '',
   });
   const [gpsStatus, setGpsStatus] = useState('idle');
+  const [addressLoading, setAddressLoading] = useState(false);
   const [pinPos, setPinPos] = useState(null);
 
   function handleChange(e) {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
-  const handleMapPick = useCallback((lat, lng) => {
-    const latStr = lat.toFixed(6);
-    const lngStr = lng.toFixed(6);
+  const applyLocation = useCallback(async (lat, lng) => {
     setPinPos([lat, lng]);
-    setForm(prev => ({ ...prev, lat: latStr, lng: lngStr }));
+    setForm(prev => ({ ...prev, lat: lat.toFixed(6), lng: lng.toFixed(6) }));
+    setAddressLoading(true);
+    const address = await reverseGeocode(lat, lng);
+    setForm(prev => ({ ...prev, address }));
+    setAddressLoading(false);
   }, []);
 
   function handleGetGPS() {
@@ -53,14 +70,7 @@ export default function AddGreenForm({ onAdd, onClose }) {
     setGpsStatus('loading');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        setPinPos([lat, lng]);
-        setForm(prev => ({
-          ...prev,
-          lat: lat.toFixed(6),
-          lng: lng.toFixed(6),
-        }));
+        applyLocation(pos.coords.latitude, pos.coords.longitude);
         setGpsStatus('success');
       },
       () => setGpsStatus('error'),
@@ -70,7 +80,7 @@ export default function AddGreenForm({ onAdd, onClose }) {
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (!form.name.trim() || !form.address.trim()) return;
+    if (!form.name.trim()) return;
     onAdd({
       type: form.type,
       name: form.name.trim(),
@@ -78,7 +88,7 @@ export default function AddGreenForm({ onAdd, onClose }) {
       location: {
         lat: parseFloat(form.lat) || 35.3386,
         lng: parseFloat(form.lng) || 139.4875,
-        address: form.address.trim(),
+        address: form.address.trim() || '藤沢市',
       },
       plantedYear: form.plantedYear ? parseInt(form.plantedYear) : null,
       height: form.height ? parseFloat(form.height) : null,
@@ -111,11 +121,6 @@ export default function AddGreenForm({ onAdd, onClose }) {
             <input className="form-input" name="name" placeholder="例：ソメイヨシノ" value={form.name} onChange={handleChange} required />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">住所 *</label>
-            <input className="form-input" name="address" placeholder="例：藤沢市辻堂神台公園" value={form.address} onChange={handleChange} required />
-          </div>
-
           {/* 地図タップで場所指定 */}
           <div className="form-group">
             <label className="form-label">📍 地図をタップして場所を指定</label>
@@ -123,17 +128,17 @@ export default function AddGreenForm({ onAdd, onClose }) {
               <MapContainer
                 center={pinPos || [35.3386, 139.4875]}
                 zoom={14}
-                style={{ width: '100%', height: '200px', borderRadius: '8px' }}
+                style={{ width: '100%', height: '200px' }}
                 zoomControl={true}
               >
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='&copy; OpenStreetMap contributors'
                 />
-                <LocationPicker onPick={handleMapPick} />
+                <LocationPicker onPick={applyLocation} />
                 {pinPos && <Marker position={pinPos} />}
               </MapContainer>
-              <div className="map-tap-hint">タップした場所にピンが立ちます</div>
+              <div className="map-tap-hint">タップした場所にピンが立ち、住所が自動入力されます</div>
             </div>
           </div>
 
@@ -142,16 +147,24 @@ export default function AddGreenForm({ onAdd, onClose }) {
             <button type="button" className="btn-gps" onClick={handleGetGPS} disabled={gpsStatus === 'loading'}>
               {gpsStatus === 'loading' ? '📡 取得中...' : '📍 GPSで現在地を取得'}
             </button>
-            {gpsStatus === 'success' && <div className="gps-success">✅ 位置を取得しました（地図のピンも移動しました）</div>}
-            {gpsStatus === 'error' && <div className="gps-error">⚠️ 位置を取得できませんでした。地図をタップして指定してください。</div>}
+            {gpsStatus === 'success' && <div className="gps-success">✅ 現在地を取得しました</div>}
+            {gpsStatus === 'error' && <div className="gps-error">⚠️ 取得できませんでした。地図をタップして指定してください。</div>}
           </div>
 
-          {/* 座標表示 */}
-          {(form.lat || form.lng) && (
-            <div className="gps-success" style={{ marginBottom: '0.5rem' }}>
-              緯度: {form.lat}　経度: {form.lng}
-            </div>
-          )}
+          {/* 住所（自動入力・修正可） */}
+          <div className="form-group">
+            <label className="form-label">
+              住所
+              {addressLoading && <span className="address-loading"> 取得中...</span>}
+            </label>
+            <input
+              className="form-input"
+              name="address"
+              placeholder="地図をタップすると自動入力されます"
+              value={form.address}
+              onChange={handleChange}
+            />
+          </div>
 
           <div className="form-group">
             <label className="form-label">学名（任意）</label>
