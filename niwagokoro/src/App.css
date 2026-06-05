@@ -1018,7 +1018,11 @@ body {
 
   .add-form-box {
     width: 95vw;
-    max-height: 90vh;
+    max-height: 92vh;
     overflow-y: auto;
+  }
+
+  .location-map-wrap .leaflet-container {
+    height: 280px !important;
   }
 }

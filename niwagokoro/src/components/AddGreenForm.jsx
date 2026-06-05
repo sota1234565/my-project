@@ -138,7 +138,7 @@ export default function AddGreenForm({ onAdd, onClose }) {
               <MapContainer
                 center={pinPos || [35.3386, 139.4875]}
                 zoom={14}
-                style={{ width: '100%', height: '200px' }}
+                style={{ width: '100%', height: '320px' }}
                 zoomControl={true}
               >
                 <TileLayer
