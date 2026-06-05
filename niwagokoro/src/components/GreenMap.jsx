@@ -23,7 +23,7 @@ export default function GreenMap({ items, selectedItem, onSelectItem }) {
   return (
     <div className="map-container">
       <MapContainer
-        center={[35.6888, 139.6925]}
+        center={[35.3386, 139.4875]}
         zoom={15}
         style={{ width: '100%', height: '100%' }}
         zoomControl={false}
