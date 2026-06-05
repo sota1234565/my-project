@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -51,7 +51,22 @@ export default function AddGreenForm({ onAdd, onClose }) {
   const [gpsStatus, setGpsStatus] = useState('idle');
   const [addressLoading, setAddressLoading] = useState(false);
   const [pinPos, setPinPos] = useState(null);
+  const [mapCenter, setMapCenter] = useState([35.3386, 139.4875]);
   const [photo, setPhoto] = useState(null);
+
+  // フォームを開いたとき自動で現在地を取得してマップ中心に
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setMapCenter([lat, lng]);
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }, []);
 
   function handlePhoto(e) {
     const file = e.target.files[0];
@@ -136,7 +151,7 @@ export default function AddGreenForm({ onAdd, onClose }) {
             <label className="form-label">📍 地図をタップして場所を指定</label>
             <div className="location-map-wrap">
               <MapContainer
-                center={pinPos || [35.3386, 139.4875]}
+                center={pinPos || mapCenter}
                 zoom={14}
                 style={{ width: '100%', height: '320px' }}
                 zoomControl={true}
