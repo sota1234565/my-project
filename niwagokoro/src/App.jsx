@@ -33,6 +33,7 @@ export default function App() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
+  const [mobileTab, setMobileTab] = useState('map'); // 'map' | 'list' | 'ranking'
 
   const MY_ID = CURRENT_USER.id;
 
@@ -46,6 +47,7 @@ export default function App() {
     setSelectedItem(item);
     setShowDetail(true);
     setActiveView('map');
+    setMobileTab('map');
   }
 
   function handleBack() {
@@ -158,8 +160,8 @@ export default function App() {
         </div>
       </div>
 
-      <div className="main">
-        {activeView === 'map' && (
+      <div className={`main ${mobileTab === 'list' || mobileTab === 'ranking' ? 'list-mode' : ''}`}>
+        {(activeView === 'map' || mobileTab === 'map') && (
           <GreenMap
             items={filteredItems}
             selectedItem={selectedItem}
@@ -167,7 +169,7 @@ export default function App() {
           />
         )}
 
-        <div className="sidebar">
+        <div className={`sidebar ${mobileTab === 'list' || mobileTab === 'ranking' ? 'mobile-visible' : ''}`}>
           {activeView === 'ranking' && !showDetail ? (
             <RankingPanel
               items={items}
@@ -235,11 +237,27 @@ export default function App() {
         </div>
       </div>
 
-      {activeView === 'map' && (
+      {(activeView === 'map' && mobileTab === 'map') && (
         <button className="fab" onClick={() => setShowAddForm(true)} title="新しい緑地を登録">
           +
         </button>
       )}
+
+      {/* モバイル用タブバー */}
+      <nav className="mobile-tab-bar">
+        <button className={`mobile-tab-btn ${mobileTab === 'map' ? 'active' : ''}`} onClick={() => { setMobileTab('map'); setActiveView('map'); }}>
+          <span className="tab-icon">🗺️</span>地図
+        </button>
+        <button className={`mobile-tab-btn ${mobileTab === 'map' ? 'active' : ''}`} onClick={() => setShowAddForm(true)}>
+          <span className="tab-icon">➕</span>登録
+        </button>
+        <button className={`mobile-tab-btn ${mobileTab === 'list' ? 'active' : ''}`} onClick={() => { setMobileTab('list'); setActiveView('map'); }}>
+          <span className="tab-icon">🌿</span>一覧
+        </button>
+        <button className={`mobile-tab-btn ${mobileTab === 'ranking' ? 'active' : ''}`} onClick={() => { setMobileTab('ranking'); setActiveView('ranking'); }}>
+          <span className="tab-icon">🏆</span>ランキング
+        </button>
+      </nav>
 
       {showAddForm && (
         <AddGreenForm

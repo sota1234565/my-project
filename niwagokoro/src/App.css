@@ -940,3 +940,85 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--green-300); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--green-500); }
+
+/* ── Mobile tab bar ── */
+.mobile-tab-bar { display: none; }
+
+/* ── Responsive (スマホ) ── */
+@media (max-width: 768px) {
+  .header { padding: 0 0.75rem; height: 50px; }
+  .header-logo { font-size: 1rem; }
+  .header-nav { display: none; }
+
+  .stats-bar { gap: 0; }
+  .stat-item { flex: 1; padding: 0.4rem 0.25rem; font-size: 0.7rem; }
+  .stat-num { font-size: 1.1rem; }
+
+  .main { flex-direction: column; }
+
+  .map-container {
+    flex: none;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    display: none;
+  }
+
+  .sidebar.mobile-visible {
+    display: flex;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 56px;
+    z-index: 800;
+    overflow-y: auto;
+  }
+
+  .main.list-mode .map-container { display: none; }
+  .main.list-mode .sidebar { display: flex; position: static; bottom: unset; }
+
+  .mobile-tab-bar {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 56px;
+    background: white;
+    border-top: 1px solid var(--border);
+    z-index: 900;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+  }
+
+  .mobile-tab-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border: none;
+    background: none;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .mobile-tab-btn .tab-icon { font-size: 1.3rem; }
+  .mobile-tab-btn.active { color: var(--green-700); }
+
+  .fab { bottom: 70px; }
+  .locate-btn { bottom: 175px; }
+  .nearby-panel { bottom: 68px; max-width: 180px; }
+
+  .add-form-box {
+    width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
