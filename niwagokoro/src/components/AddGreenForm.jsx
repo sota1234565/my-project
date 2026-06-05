@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { GREEN_TYPES } from '../data/greenItems';
@@ -32,6 +32,14 @@ function LocationPicker({ onPick }) {
       onPick(e.latlng.lat, e.latlng.lng);
     },
   });
+  return null;
+}
+
+function SetCenter({ center }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center) map.setView(center, 16, { animate: true });
+  }, [center, map]);
   return null;
 }
 
@@ -160,6 +168,7 @@ export default function AddGreenForm({ onAdd, onClose }) {
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='&copy; OpenStreetMap contributors'
                 />
+                <SetCenter center={mapCenter} />
                 <LocationPicker onPick={applyLocation} />
                 {pinPos && <Marker position={pinPos} />}
               </MapContainer>
