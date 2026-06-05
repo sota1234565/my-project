@@ -50,6 +50,11 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
       </div>
 
       <div className="detail-body">
+        {/* 写真 */}
+        {item.photo && (
+          <img src={item.photo} alt={item.name} className="detail-photo" />
+        )}
+
         {/* 説明 */}
         <div className="section-title">📋 説明</div>
         <p className="description-text">{item.description}</p>

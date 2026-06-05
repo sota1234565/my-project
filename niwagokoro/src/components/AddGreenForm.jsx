@@ -51,6 +51,15 @@ export default function AddGreenForm({ onAdd, onClose }) {
   const [gpsStatus, setGpsStatus] = useState('idle');
   const [addressLoading, setAddressLoading] = useState(false);
   const [pinPos, setPinPos] = useState(null);
+  const [photo, setPhoto] = useState(null);
+
+  function handlePhoto(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setPhoto(ev.target.result);
+    reader.readAsDataURL(file);
+  }
 
   function handleChange(e) {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -96,6 +105,7 @@ export default function AddGreenForm({ onAdd, onClose }) {
       condition: 'healthy',
       moisture: 60,
       description: form.description.trim(),
+      photo: photo || null,
       observations: [],
       supporters: [],
       tags: form.tags.split(/[,、\s]+/).map(t => t.trim()).filter(Boolean),
@@ -164,6 +174,19 @@ export default function AddGreenForm({ onAdd, onClose }) {
               value={form.address}
               onChange={handleChange}
             />
+          </div>
+
+          {/* 写真アップロード */}
+          <div className="form-group">
+            <label className="form-label">📷 写真（任意）</label>
+            <label className="photo-upload-label">
+              {photo ? (
+                <img src={photo} alt="プレビュー" className="photo-preview" />
+              ) : (
+                <div className="photo-placeholder">タップして写真を選択</div>
+              )}
+              <input type="file" accept="image/*" capture="environment" onChange={handlePhoto} style={{ display: 'none' }} />
+            </label>
           </div>
 
           <div className="form-group">

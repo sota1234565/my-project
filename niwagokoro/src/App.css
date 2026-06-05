@@ -890,6 +890,12 @@ body {
 .map-tap-hint { text-align: center; font-size: 0.75rem; color: var(--text-muted); padding: 0.3rem; background: var(--green-50); }
 .address-loading { font-size: 0.75rem; color: var(--text-muted); font-weight: normal; }
 
+.photo-upload-label { display: block; cursor: pointer; border-radius: var(--radius-sm); overflow: hidden; border: 2px dashed var(--border); }
+.photo-placeholder { padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; background: var(--green-50); }
+.photo-placeholder:hover { background: var(--green-100); }
+.photo-preview { width: 100%; max-height: 200px; object-fit: cover; display: block; }
+.detail-photo { width: 100%; max-height: 240px; object-fit: cover; border-radius: var(--radius); margin-bottom: 1rem; }
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
