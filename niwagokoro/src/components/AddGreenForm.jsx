@@ -7,17 +7,38 @@ export default function AddGreenForm({ onAdd, onClose }) {
     name: '',
     scientificName: '',
     address: '',
-    lat: '35.6888',
-    lng: '139.6925',
+    lat: '',
+    lng: '',
     plantedYear: '',
     height: '',
     trunkDiameter: '',
     description: '',
     tags: '',
   });
+  const [gpsStatus, setGpsStatus] = useState('idle'); // idle | loading | success | error
 
   function handleChange(e) {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  }
+
+  function handleGetGPS() {
+    if (!navigator.geolocation) {
+      setGpsStatus('error');
+      return;
+    }
+    setGpsStatus('loading');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm(prev => ({
+          ...prev,
+          lat: pos.coords.latitude.toFixed(6),
+          lng: pos.coords.longitude.toFixed(6),
+        }));
+        setGpsStatus('success');
+      },
+      () => setGpsStatus('error'),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   }
 
   function handleSubmit(e) {
@@ -28,8 +49,8 @@ export default function AddGreenForm({ onAdd, onClose }) {
       name: form.name.trim(),
       scientificName: form.scientificName.trim() || null,
       location: {
-        lat: parseFloat(form.lat) || 35.6888,
-        lng: parseFloat(form.lng) || 139.6925,
+        lat: parseFloat(form.lat) || 35.3386,
+        lng: parseFloat(form.lng) || 139.4875,
         address: form.address.trim(),
       },
       plantedYear: form.plantedYear ? parseInt(form.plantedYear) : null,
@@ -83,22 +104,44 @@ export default function AddGreenForm({ onAdd, onClose }) {
             <input
               className="form-input"
               name="address"
-              placeholder="例：渋谷区神南1丁目"
+              placeholder="例：藤沢市辻堂神台公園"
               value={form.address}
               onChange={handleChange}
               required
             />
           </div>
+
+          {/* GPS取得 */}
+          <div className="form-group">
+            <label className="form-label">現在地を取得</label>
+            <button
+              type="button"
+              className="btn-gps"
+              onClick={handleGetGPS}
+              disabled={gpsStatus === 'loading'}
+            >
+              {gpsStatus === 'loading' ? '📡 取得中...' : '📍 今いる場所を使う'}
+            </button>
+            {gpsStatus === 'success' && (
+              <div className="gps-success">✅ 位置を取得しました（緯度: {form.lat}、経度: {form.lng}）</div>
+            )}
+            {gpsStatus === 'error' && (
+              <div className="gps-error">⚠️ 位置を取得できませんでした。手動で入力してください。</div>
+            )}
+          </div>
+
+          {/* 緯度経度（手動入力も可） */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
             <div className="form-group">
               <label className="form-label">緯度</label>
-              <input className="form-input" name="lat" value={form.lat} onChange={handleChange} />
+              <input className="form-input" name="lat" value={form.lat} onChange={handleChange} placeholder="自動取得 or 手動入力" />
             </div>
             <div className="form-group">
               <label className="form-label">経度</label>
-              <input className="form-input" name="lng" value={form.lng} onChange={handleChange} />
+              <input className="form-input" name="lng" value={form.lng} onChange={handleChange} placeholder="自動取得 or 手動入力" />
             </div>
           </div>
+
           <div className="form-group">
             <label className="form-label">説明</label>
             <textarea

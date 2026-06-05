@@ -870,6 +870,23 @@ body {
 .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(45,106,79,0.4); }
 .btn-secondary:hover { background: var(--bg); border-color: var(--green-300); }
 
+.btn-gps {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: #e8f4fd;
+  color: #1a6fa8;
+  border: 1.5px solid #90c8f0;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.btn-gps:hover:not(:disabled) { background: #d0eaf8; }
+.btn-gps:disabled { opacity: 0.6; cursor: not-allowed; }
+.gps-success { margin-top: 0.4rem; font-size: 0.8rem; color: #2d6a4f; }
+.gps-error { margin-top: 0.4rem; font-size: 0.8rem; color: var(--red); }
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
