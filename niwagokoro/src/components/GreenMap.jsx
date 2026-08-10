@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, CircleMarker } from 'react-leaflet';
+import { useEffect, useRef, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Circle, CircleMarker } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -54,6 +54,17 @@ function makeEmojiIcon(emoji, isSelected, isNearby, condition) {
   });
 }
 
+const USER_ICON = L.divIcon({
+  className: '',
+  html: `<div class="user-dot">
+           <div class="user-dot-pulse"></div>
+           <div class="user-dot-core"></div>
+         </div>`,
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+  popupAnchor: [0, -12],
+});
+
 function FlyTo({ item }) {
   const map = useMap();
   useEffect(() => {
@@ -62,30 +73,75 @@ function FlyTo({ item }) {
   return null;
 }
 
-function FlyToUser({ pos }) {
+// 追従中は地図が現在地を追いかける。地図を手で動かしたら追従を解除する。
+function FollowUser({ pos, following, onManualDrag }) {
   const map = useMap();
+  const firstRef = useRef(true);
+
+  useMapEvents({
+    dragstart: () => onManualDrag(),
+  });
+
   useEffect(() => {
-    if (pos) map.flyTo(pos, 16, { duration: 1.2 });
-  }, [pos, map]);
+    if (!pos || !following) return;
+    if (firstRef.current) {
+      firstRef.current = false;
+      map.flyTo(pos, 17, { duration: 1.2 });
+    } else {
+      map.panTo(pos, { animate: true, duration: 0.6 });
+    }
+  }, [pos, following, map]);
+
+  useEffect(() => {
+    if (!following) firstRef.current = true;
+  }, [following]);
+
   return null;
 }
 
 export default function GreenMap({ items, selectedItem, onSelectItem }) {
   const [userPos, setUserPos] = useState(null);
-  const [flyToUser, setFlyToUser] = useState(false);
+  const [accuracy, setAccuracy] = useState(null);
+  const [watching, setWatching] = useState(false);
+  const [following, setFollowing] = useState(false);
   const [locError, setLocError] = useState(false);
+  const watchIdRef = useRef(null);
 
-  function handleLocate() {
-    if (!navigator.geolocation) { setLocError(true); return; }
-    navigator.geolocation.getCurrentPosition(
+  // 位置の追従開始／停止
+  useEffect(() => {
+    if (!watching || !navigator.geolocation) return;
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         setUserPos([pos.coords.latitude, pos.coords.longitude]);
-        setFlyToUser(true);
-        setTimeout(() => setFlyToUser(false), 100);
+        setAccuracy(pos.coords.accuracy);
+        setLocError(false);
       },
-      () => setLocError(true),
-      { enableHighAccuracy: true, timeout: 10000 }
+      () => { setLocError(true); setWatching(false); setFollowing(false); },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 3000 }
     );
+
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    };
+  }, [watching]);
+
+  // ボタン：停止中→追従開始／地図を動かした後→現在地に戻す／追従中→停止
+  function handleLocate() {
+    if (!navigator.geolocation) { setLocError(true); return; }
+    if (!watching) {
+      setWatching(true);
+      setFollowing(true);
+      setLocError(false);
+    } else if (!following) {
+      setFollowing(true);
+    } else {
+      setWatching(false);
+      setFollowing(false);
+    }
   }
 
   const nearbyItems = userPos
@@ -107,7 +163,11 @@ export default function GreenMap({ items, selectedItem, onSelectItem }) {
         />
 
         {selectedItem && <FlyTo item={selectedItem} />}
-        {flyToUser && userPos && <FlyToUser pos={userPos} />}
+        <FollowUser
+          pos={userPos}
+          following={following}
+          onManualDrag={() => setFollowing(false)}
+        />
 
         {/* 現在地の範囲円 */}
         {userPos && (
@@ -118,15 +178,27 @@ export default function GreenMap({ items, selectedItem, onSelectItem }) {
           />
         )}
 
+        {/* GPSの誤差範囲 */}
+        {userPos && accuracy != null && accuracy > 15 && (
+          <Circle
+            center={userPos}
+            radius={accuracy}
+            pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.12, weight: 0 }}
+          />
+        )}
+
         {/* 現在地マーカー */}
         {userPos && (
-          <CircleMarker
-            center={userPos}
-            radius={10}
-            pathOptions={{ color: '#fff', fillColor: '#3b82f6', fillOpacity: 1, weight: 3 }}
-          >
-            <Popup>📍 あなたの現在地</Popup>
-          </CircleMarker>
+          <Marker position={userPos} icon={USER_ICON} zIndexOffset={2000}>
+            <Popup>
+              📍 あなたの現在地
+              {accuracy != null && (
+                <div style={{ fontSize: '0.75rem', color: '#777', marginTop: 4 }}>
+                  誤差およそ {Math.round(accuracy)}m
+                </div>
+              )}
+            </Popup>
+          </Marker>
         )}
 
         {/* 緑地マーカー（クラスタリング） */}
@@ -191,13 +263,33 @@ export default function GreenMap({ items, selectedItem, onSelectItem }) {
         </MarkerClusterGroup>
       </MapContainer>
 
+      {/* まだ何も登録されていないときの案内 */}
+      {items.length === 0 && (
+        <div className="map-empty-hint">
+          <div className="map-empty-emoji">🌱</div>
+          <div className="map-empty-title">地図はまだ空です</div>
+          <div className="map-empty-text">
+            近くの木や花を見つけたら「＋」から登録してみましょう。
+          </div>
+        </div>
+      )}
+
       {/* 現在地ボタン */}
-      <button className="locate-btn" onClick={handleLocate} title="現在地を表示">📍</button>
+      <button
+        className={`locate-btn ${watching ? 'watching' : ''} ${following ? 'following' : ''}`}
+        onClick={handleLocate}
+        title={!watching ? '現在地を表示' : following ? '追従を停止' : '現在地に戻る'}
+      >
+        {watching ? '🎯' : '📍'}
+      </button>
 
       {/* 近くの緑地パネル */}
       {userPos && nearbyItems.length > 0 && (
         <div className="nearby-panel">
-          <div className="nearby-title">📍 近くの緑地（{NEARBY_RADIUS_M}m以内）</div>
+          <div className="nearby-title">
+            📍 近くの緑地（{NEARBY_RADIUS_M}m以内）
+            {following && <span className="live-dot" title="追従中" />}
+          </div>
           {nearbyItems.map(item => {
             const typeInfo = GREEN_TYPES[item.type];
             const dist = Math.round(getDistance(userPos[0], userPos[1], item.location.lat, item.location.lng));

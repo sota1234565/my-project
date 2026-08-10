@@ -11,6 +11,26 @@ export default function RankingPanel({ items, users, onSelectItem }) {
     return 'rank-other';
   }
 
+  if (items.length === 0) {
+    return (
+      <div className="ranking-view">
+        <div className="empty-state">
+          <div className="empty-emoji">🏆</div>
+          <div className="empty-title">まだ記録がありません</div>
+          <div className="empty-text">
+            緑地を登録したり、観察を記録するとポイントがたまり、ここに順位が表示されます。
+          </div>
+        </div>
+        <div className="points-guide">
+          <div className="points-guide-title">📌 ポイントの獲得方法</div>
+          <div>📝 観察を記録する … +10pt</div>
+          <div>💚 推し登録する … +5pt</div>
+          <div>🌱 新しい緑地を登録する … +30pt</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="ranking-view">
       <div className="ranking-section-title">💚 推しの木・花・雨庭 ランキング</div>
@@ -46,8 +66,8 @@ export default function RankingPanel({ items, users, onSelectItem }) {
         </div>
       ))}
 
-      <div style={{ marginTop: '1.5rem', background: '#f5f9f5', borderRadius: '10px', padding: '0.85rem 1rem', fontSize: '0.8rem', color: '#555' }}>
-        <div style={{ fontWeight: 700, color: '#2d6a4f', marginBottom: '0.4rem' }}>📌 ポイントの獲得方法</div>
+      <div className="points-guide">
+        <div className="points-guide-title">📌 ポイントの獲得方法</div>
         <div>📝 観察を記録する … +10pt</div>
         <div>💚 推し登録する … +5pt</div>
         <div>🌱 新しい緑地を登録する … +30pt</div>

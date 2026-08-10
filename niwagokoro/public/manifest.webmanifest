@@ -1,0 +1,32 @@
+{
+  "name": "庭心 - まちの緑を見守るアプリ",
+  "short_name": "庭心",
+  "description": "藤沢市の木・花・雨庭を市民で記録し、見守るためのアプリ。",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f0f4ee",
+  "theme_color": "#1b4a37",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -919,6 +919,45 @@ body {
   justify-content: center;
 }
 .locate-btn:hover { background: var(--green-50); }
+.locate-btn.watching { background: #e8f1fe; }
+.locate-btn.following { background: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.28), var(--shadow-md); }
+
+/* 現在地マーカー（脈打つ青い点） */
+.user-dot { position: relative; width: 22px; height: 22px; }
+.user-dot-core {
+  position: absolute;
+  inset: 4px;
+  background: #3b82f6;
+  border: 2.5px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+.user-dot-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(59,130,246,0.35);
+  animation: userPulse 2s ease-out infinite;
+}
+@keyframes userPulse {
+  0%   { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .user-dot-pulse { animation: none; opacity: 0.5; }
+}
+
+/* 追従中を示す点滅インジケータ */
+.live-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: #3b82f6;
+  animation: liveBlink 1.4s ease-in-out infinite;
+  vertical-align: middle;
+}
+@keyframes liveBlink { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
 
 .nearby-panel {
   position: absolute;
@@ -940,6 +979,77 @@ body {
 .nearby-dist { font-size: 0.72rem; color: var(--text-muted); }
 .nearby-badge { font-size: 0.7rem; color: #3b82f6; }
 
+/* ── 空の状態 ── */
+.empty-state {
+  padding: 2rem 1.25rem;
+  text-align: center;
+}
+.empty-emoji { font-size: 2.5rem; margin-bottom: 0.5rem; }
+.empty-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--green-700);
+  margin-bottom: 0.5rem;
+}
+.empty-text {
+  font-size: 0.82rem;
+  color: var(--text-sub);
+  line-height: 1.7;
+}
+.empty-cta {
+  margin-top: 1rem;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--green-700), var(--green-800));
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+.empty-cta:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+
+.points-guide {
+  margin-top: 1.5rem;
+  background: var(--green-50);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  font-size: 0.8rem;
+  color: var(--text-sub);
+  line-height: 1.9;
+}
+.points-guide-title { font-weight: 700; color: var(--green-700); margin-bottom: 0.4rem; }
+
+/* 地図が空のときの案内 */
+.map-empty-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 600;
+  background: rgba(255,255,255,0.96);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+  max-width: 260px;
+  pointer-events: none;
+}
+.map-empty-emoji { font-size: 2rem; margin-bottom: 0.35rem; }
+.map-empty-title { font-size: 0.9rem; font-weight: 800; color: var(--green-700); margin-bottom: 0.35rem; }
+.map-empty-text { font-size: 0.78rem; color: var(--text-sub); line-height: 1.65; }
+
+/* 保存容量の警告 */
+.storage-warning {
+  background: #fff4e5;
+  border-bottom: 1px solid #f5c98a;
+  color: #8a5200;
+  font-size: 0.78rem;
+  padding: 0.5rem 1rem;
+  line-height: 1.5;
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -951,7 +1061,12 @@ body {
 
 /* ── Responsive (スマホ) ── */
 @media (max-width: 768px) {
-  .header { padding: 0 0.75rem; height: 50px; }
+  /* ノッチ・ホームインジケータ分の余白（ホーム画面から起動したとき用） */
+  .header {
+    padding: 0 0.75rem;
+    padding-top: env(safe-area-inset-top);
+    height: calc(50px + env(safe-area-inset-top));
+  }
   .header-logo { font-size: 1rem; }
   .header-nav { display: none; }
 
@@ -980,7 +1095,8 @@ body {
   .sidebar.mobile-visible {
     display: flex;
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 56px;
+    top: 0; left: 0; right: 0;
+    bottom: calc(56px + env(safe-area-inset-bottom));
     z-index: 800;
     overflow-y: auto;
   }
@@ -992,7 +1108,8 @@ body {
     display: flex;
     position: fixed;
     bottom: 0; left: 0; right: 0;
-    height: 56px;
+    height: calc(56px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
     background: white;
     border-top: 1px solid var(--border);
     z-index: 900;
@@ -1017,9 +1134,9 @@ body {
   .mobile-tab-btn .tab-icon { font-size: 1.3rem; }
   .mobile-tab-btn.active { color: var(--green-700); }
 
-  .fab { bottom: 70px; }
-  .locate-btn { bottom: 175px; }
-  .nearby-panel { bottom: 68px; max-width: 180px; }
+  .fab { bottom: calc(70px + env(safe-area-inset-bottom)); }
+  .locate-btn { bottom: calc(175px + env(safe-area-inset-bottom)); }
+  .nearby-panel { bottom: calc(68px + env(safe-area-inset-bottom)); max-width: 180px; }
 
   .add-form-box {
     width: 98vw;

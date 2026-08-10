@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import './App.css';
 import GreenMap from './components/GreenMap';
 import DetailPanel from './components/DetailPanel';
 import RankingPanel from './components/RankingPanel';
 import AddGreenForm from './components/AddGreenForm';
-import { initialGreenItems, initialUsers, GREEN_TYPES, CURRENT_USER } from './data/greenItems';
+import { initialGreenItems, GREEN_TYPES, CURRENT_USER } from './data/greenItems';
+import { loadItems, loadPoints, saveItems, savePoints } from './storage';
 
 const VIEWS = { map: '地図', ranking: 'ランキング' };
 const FILTERS = [
@@ -17,17 +18,21 @@ const FILTERS = [
 
 const CONDITION_LABELS = { healthy: '健全', needs_care: '要ケア', poor: '不良' };
 
-let idCounter = 100;
-function generateId(type) {
+// 既存データの続き番号を振る（リロード後もIDが重複しないように）
+function generateId(type, existing) {
   const prefix = type === 'tree' ? 'T' : type === 'flower' ? 'F' : 'R';
-  idCounter++;
-  return `${prefix}-${String(idCounter).padStart(3, '0')}`;
+  const max = existing
+    .filter(i => typeof i.id === 'string' && i.id.startsWith(`${prefix}-`))
+    .map(i => parseInt(i.id.slice(prefix.length + 1), 10))
+    .filter(n => Number.isFinite(n))
+    .reduce((a, b) => Math.max(a, b), 0);
+  return `${prefix}-${String(max + 1).padStart(3, '0')}`;
 }
 
 export default function App() {
-  const [items, setItems] = useState(initialGreenItems);
-  const [users, setUsers] = useState(initialUsers);
-  const [myPoints, setMyPoints] = useState(0);
+  const [items, setItems] = useState(() => loadItems(initialGreenItems));
+  const [myPoints, setMyPoints] = useState(() => loadPoints());
+  const [storageFull, setStorageFull] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [activeView, setActiveView] = useState('map');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -36,6 +41,22 @@ export default function App() {
   const [mobileTab, setMobileTab] = useState('map'); // 'map' | 'list' | 'ranking'
 
   const MY_ID = CURRENT_USER.id;
+
+  useEffect(() => {
+    savePoints(myPoints);
+  }, [myPoints]);
+
+  // 緑地の更新は必ずここを通す。state更新と同時に端末へ保存する。
+  // （サーバーがないため、データはこの端末にのみ残る）
+  function commitItems(next) {
+    setItems(next);
+    setStorageFull(!saveItems(next));
+  }
+
+  // ランキングに出すのは実際に使った人だけ。今はサーバーがないので自分ひとり。
+  const users = myPoints > 0 || items.length > 0
+    ? [{ ...CURRENT_USER, points: myPoints }]
+    : [];
 
   const filteredItems = items.filter(item => {
     if (activeFilter === 'all') return true;
@@ -56,25 +77,21 @@ export default function App() {
   }
 
   function handleSupport(itemId) {
-    setItems(prev => prev.map(item => {
-      if (item.id !== itemId) return item;
-      const alreadySupported = item.supporters.includes(MY_ID);
-      if (alreadySupported) {
-        return { ...item, supporters: item.supporters.filter(id => id !== MY_ID) };
-      } else {
-        setMyPoints(p => p + 5);
-        return { ...item, supporters: [...item.supporters, MY_ID] };
+    const target = items.find(i => i.id === itemId);
+    if (!target) return;
+    const alreadySupported = target.supporters.includes(MY_ID);
+
+    const next = items.map(item =>
+      item.id !== itemId ? item : {
+        ...item,
+        supporters: alreadySupported
+          ? item.supporters.filter(id => id !== MY_ID)
+          : [...item.supporters, MY_ID],
       }
-    }));
-    setSelectedItem(prev => {
-      if (!prev || prev.id !== itemId) return prev;
-      const alreadySupported = prev.supporters.includes(MY_ID);
-      if (alreadySupported) {
-        return { ...prev, supporters: prev.supporters.filter(id => id !== MY_ID) };
-      } else {
-        return { ...prev, supporters: [...prev.supporters, MY_ID] };
-      }
-    });
+    );
+    commitItems(next);
+    if (!alreadySupported) setMyPoints(p => p + 5);
+    setSelectedItem(prev => (prev && prev.id === itemId ? next.find(i => i.id === itemId) : prev));
   }
 
   function handleAddObservation(itemId, text) {
@@ -86,26 +103,23 @@ export default function App() {
       text,
       photo: null,
     };
-    setItems(prev => prev.map(item =>
+    const next = items.map(item =>
       item.id === itemId
         ? { ...item, observations: [...item.observations, newObs] }
         : item
-    ));
-    setSelectedItem(prev =>
-      prev && prev.id === itemId
-        ? { ...prev, observations: [...prev.observations, newObs] }
-        : prev
     );
+    commitItems(next);
+    setSelectedItem(prev => (prev && prev.id === itemId ? next.find(i => i.id === itemId) : prev));
     setMyPoints(p => p + 10);
   }
 
   function handleAddGreen(data) {
     const newItem = {
       ...data,
-      id: generateId(data.type),
+      id: generateId(data.type, items),
       moisture: 60,
     };
-    setItems(prev => [...prev, newItem]);
+    commitItems([...items, newItem]);
     setMyPoints(p => p + 30);
     setShowAddForm(false);
     setSelectedItem(newItem);
@@ -160,6 +174,13 @@ export default function App() {
         </div>
       </div>
 
+      {storageFull && (
+        <div className="storage-warning">
+          ⚠️ 端末の保存容量がいっぱいで、最新の変更を保存できませんでした。
+          写真の少ない登録にするか、不要な記録を削除してください。
+        </div>
+      )}
+
       <div className={`main ${mobileTab === 'list' || mobileTab === 'ranking' ? 'list-mode' : ''}`}>
         {(activeView === 'map' || mobileTab === 'map') && (
           <GreenMap
@@ -201,6 +222,24 @@ export default function App() {
                 </div>
               </div>
               <div className="sidebar-list">
+                {items.length === 0 && (
+                  <div className="empty-state">
+                    <div className="empty-emoji">🌱</div>
+                    <div className="empty-title">まだ登録がありません</div>
+                    <div className="empty-text">
+                      近くの木や花を見つけたら、右下の「＋」から登録してみましょう。
+                      写真を撮って地図をタップするだけで記録できます。
+                    </div>
+                    <button className="empty-cta" onClick={() => setShowAddForm(true)}>
+                      🌱 最初の緑地を登録する
+                    </button>
+                  </div>
+                )}
+                {items.length > 0 && filteredItems.length === 0 && (
+                  <div className="empty-state">
+                    <div className="empty-text">この条件に合う緑地はまだありません。</div>
+                  </div>
+                )}
                 {filteredItems.map(item => {
                   const typeInfo = GREEN_TYPES[item.type];
                   return (
