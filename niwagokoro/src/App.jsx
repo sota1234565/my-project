@@ -1,11 +1,18 @@
 import { useEffect, useState } from 'react';
+import { ref, onValue, push, set } from 'firebase/database';
 import './App.css';
 import GreenMap from './components/GreenMap';
 import DetailPanel from './components/DetailPanel';
 import RankingPanel from './components/RankingPanel';
 import AddGreenForm from './components/AddGreenForm';
-import { initialGreenItems, GREEN_TYPES, CURRENT_USER } from './data/greenItems';
-import { loadItems, loadPoints, saveItems, savePoints } from './storage';
+import { GREEN_TYPES, CURRENT_USER } from './data/greenItems';
+import { db } from './firebase';
+import { getDeviceId } from './deviceId';
+import {
+  loadPoints, savePoints,
+  loadSupports, saveSupports,
+  loadMyObs, saveMyObs,
+} from './localData';
 
 const VIEWS = { map: '地図', ranking: 'ランキング' };
 const FILTERS = [
@@ -18,42 +25,60 @@ const FILTERS = [
 
 const CONDITION_LABELS = { healthy: '健全', needs_care: '要ケア', poor: '不良' };
 
-// 既存データの続き番号を振る（リロード後もIDが重複しないように）
-function generateId(type, existing) {
+const deviceId = getDeviceId();
+const MY_ID = CURRENT_USER.id;
+
+// 表示用の見た目だけのラベル（本当のIDはFirebaseが振るキー）
+function generateCode(type) {
   const prefix = type === 'tree' ? 'T' : type === 'flower' ? 'F' : 'R';
-  const max = existing
-    .filter(i => typeof i.id === 'string' && i.id.startsWith(`${prefix}-`))
-    .map(i => parseInt(i.id.slice(prefix.length + 1), 10))
-    .filter(n => Number.isFinite(n))
-    .reduce((a, b) => Math.max(a, b), 0);
-  return `${prefix}-${String(max + 1).padStart(3, '0')}`;
+  return `${prefix}-${Date.now().toString().slice(-4)}`;
 }
 
 export default function App() {
-  const [items, setItems] = useState(() => loadItems(initialGreenItems));
+  const [allItems, setAllItems] = useState([]);   // Firebaseから来る全データ
+  const [loading, setLoading] = useState(true);
+  const [saveError, setSaveError] = useState(false);
   const [myPoints, setMyPoints] = useState(() => loadPoints());
-  const [storageFull, setStorageFull] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [supports, setSupports] = useState(() => loadSupports()); // { itemId: true }
+  const [myObs, setMyObs] = useState(() => loadMyObs());          // { itemId: [obs] }
+  const [selectedId, setSelectedId] = useState(null);
   const [activeView, setActiveView] = useState('map');
   const [activeFilter, setActiveFilter] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [mobileTab, setMobileTab] = useState('map'); // 'map' | 'list' | 'ranking'
 
-  const MY_ID = CURRENT_USER.id;
-
+  // 共有データベースを購読（誰かが登録・承認すると自動で反映される）
   useEffect(() => {
-    savePoints(myPoints);
-  }, [myPoints]);
+    const itemsRef = ref(db, 'greenItems');
+    const unsub = onValue(itemsRef, (snap) => {
+      const val = snap.val() || {};
+      const arr = Object.entries(val).map(([id, v]) => ({ id, ...v }));
+      arr.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+      setAllItems(arr);
+      setLoading(false);
+    }, () => setLoading(false));
+    return () => unsub();
+  }, []);
 
-  // 緑地の更新は必ずここを通す。state更新と同時に端末へ保存する。
-  // （サーバーがないため、データはこの端末にのみ残る）
-  function commitItems(next) {
-    setItems(next);
-    setStorageFull(!saveItems(next));
-  }
+  useEffect(() => { savePoints(myPoints); }, [myPoints]);
 
-  // ランキングに出すのは実際に使った人だけ。今はサーバーがないので自分ひとり。
+  // 表示するのは「承認済み」＋「自分が登録した承認待ち」。
+  // 推し・観察は各自の端末の記録を重ねる。
+  const items = allItems
+    .filter(it => it.status === 'approved' || it.authorId === deviceId)
+    .map(it => ({
+      ...it,
+      condition: it.condition || 'healthy',
+      moisture: it.moisture ?? 60,
+      tags: it.tags || [],
+      supporters: supports[it.id] ? [MY_ID] : [],
+      observations: myObs[it.id] || [],
+      isMinePending: it.status !== 'approved' && it.authorId === deviceId,
+    }));
+
+  const selectedItem = items.find(i => i.id === selectedId) || null;
+
   const users = myPoints > 0 || items.length > 0
     ? [{ ...CURRENT_USER, points: myPoints }]
     : [];
@@ -65,7 +90,7 @@ export default function App() {
   });
 
   function handleSelectItem(item) {
-    setSelectedItem(item);
+    setSelectedId(item.id);
     setShowDetail(true);
     setActiveView('map');
     setMobileTab('map');
@@ -73,27 +98,21 @@ export default function App() {
 
   function handleBack() {
     setShowDetail(false);
-    setSelectedItem(null);
+    setSelectedId(null);
   }
 
+  // 推しは自分の端末の記録として保存する
   function handleSupport(itemId) {
-    const target = items.find(i => i.id === itemId);
-    if (!target) return;
-    const alreadySupported = target.supporters.includes(MY_ID);
-
-    const next = items.map(item =>
-      item.id !== itemId ? item : {
-        ...item,
-        supporters: alreadySupported
-          ? item.supporters.filter(id => id !== MY_ID)
-          : [...item.supporters, MY_ID],
-      }
-    );
-    commitItems(next);
-    if (!alreadySupported) setMyPoints(p => p + 5);
-    setSelectedItem(prev => (prev && prev.id === itemId ? next.find(i => i.id === itemId) : prev));
+    const already = !!supports[itemId];
+    const next = { ...supports };
+    if (already) delete next[itemId];
+    else next[itemId] = true;
+    setSupports(next);
+    saveSupports(next);
+    if (!already) setMyPoints(p => p + 5);
   }
 
+  // 観察記録も自分の端末に保存する
   function handleAddObservation(itemId, text) {
     const newObs = {
       id: `obs-${Date.now()}`,
@@ -103,39 +122,49 @@ export default function App() {
       text,
       photo: null,
     };
-    const next = items.map(item =>
-      item.id === itemId
-        ? { ...item, observations: [...item.observations, newObs] }
-        : item
-    );
-    commitItems(next);
-    setSelectedItem(prev => (prev && prev.id === itemId ? next.find(i => i.id === itemId) : prev));
+    const next = { ...myObs, [itemId]: [...(myObs[itemId] || []), newObs] };
+    setMyObs(next);
+    saveMyObs(next);
     setMyPoints(p => p + 10);
   }
 
-  function handleAddGreen(data) {
-    const newItem = {
-      ...data,
-      id: generateId(data.type, items),
+  // 新しい緑地を共有データベースに登録する（承認待ちで入る）
+  async function handleAddGreen(data) {
+    const record = {
+      code: generateCode(data.type),
+      type: data.type,
+      name: data.name,
+      scientificName: data.scientificName ?? null,
+      location: data.location,
+      plantedYear: data.plantedYear ?? null,
+      height: data.height ?? null,
+      description: data.description ?? '',
+      tags: data.tags ?? [],
+      photo: data.photo ?? null,
+      condition: 'healthy',
       moisture: 60,
+      authorId: deviceId,
+      status: 'pending',
+      createdAt: Date.now(),
     };
-    commitItems([...items, newItem]);
-    setMyPoints(p => p + 30);
-    setShowAddForm(false);
-    setSelectedItem(newItem);
-    setShowDetail(true);
-    setActiveView('map');
-  }
-
-  function handleDeleteGreen(itemId) {
-    commitItems(items.filter(item => item.id !== itemId));
-    setShowDetail(false);
-    setSelectedItem(null);
+    const newRef = push(ref(db, 'greenItems'));
+    try {
+      await set(newRef, record);
+      setSaveError(false);
+      setMyPoints(p => p + 30);
+      setShowAddForm(false);
+      setSelectedId(newRef.key);
+      setShowDetail(true);
+      setActiveView('map');
+      setMobileTab('map');
+    } catch {
+      setSaveError(true);
+    }
   }
 
   const totalSupporters = items.reduce((sum, i) => sum + i.supporters.length, 0);
   const totalObs = items.reduce((sum, i) => sum + i.observations.length, 0);
-  const needsCareCount = items.filter(i => i.condition === 'needs_care' || i.condition === 'poor').length;
+  const pendingCount = items.filter(i => i.isMinePending).length;
 
   return (
     <div className="app">
@@ -174,16 +203,15 @@ export default function App() {
           <span className="stat-num">{totalObs}</span>
           <span>件の観察記録</span>
         </div>
-        <div className="stat-item" style={{ color: needsCareCount > 0 ? '#f4a261' : 'inherit' }}>
-          <span className="stat-num">{needsCareCount}</span>
-          <span>件 要ケア</span>
+        <div className="stat-item" style={{ color: pendingCount > 0 ? '#f4a261' : 'inherit' }}>
+          <span className="stat-num">{pendingCount}</span>
+          <span>件 公開待ち</span>
         </div>
       </div>
 
-      {storageFull && (
+      {saveError && (
         <div className="storage-warning">
-          ⚠️ 端末の保存容量がいっぱいで、最新の変更を保存できませんでした。
-          写真の少ない登録にするか、不要な記録を削除してください。
+          ⚠️ 登録の送信に失敗しました。通信環境を確認して、もう一度お試しください。
         </div>
       )}
 
@@ -210,7 +238,6 @@ export default function App() {
               onBack={handleBack}
               onSupport={handleSupport}
               onAddObservation={handleAddObservation}
-              onDelete={handleDeleteGreen}
             />
           ) : (
             <>
@@ -229,7 +256,12 @@ export default function App() {
                 </div>
               </div>
               <div className="sidebar-list">
-                {items.length === 0 && (
+                {loading && (
+                  <div className="empty-state">
+                    <div className="empty-text">読み込み中…</div>
+                  </div>
+                )}
+                {!loading && items.length === 0 && (
                   <div className="empty-state">
                     <div className="empty-emoji">🌱</div>
                     <div className="empty-title">まだ登録がありません</div>
@@ -242,7 +274,7 @@ export default function App() {
                     </button>
                   </div>
                 )}
-                {items.length > 0 && filteredItems.length === 0 && (
+                {!loading && items.length > 0 && filteredItems.length === 0 && (
                   <div className="empty-state">
                     <div className="empty-text">この条件に合う緑地はまだありません。</div>
                   </div>
@@ -252,11 +284,11 @@ export default function App() {
                   return (
                     <div
                       key={item.id}
-                      className={`green-card ${selectedItem?.id === item.id ? 'selected' : ''}`}
+                      className={`green-card ${selectedId === item.id ? 'selected' : ''}`}
                       onClick={() => handleSelectItem(item)}
                     >
                       <div className="card-header">
-                        <span className="card-id">{item.id}</span>
+                        <span className="card-id">{item.code || ''}</span>
                         <span
                           className="card-type-badge"
                           style={{ background: typeInfo.color + '22', color: typeInfo.color }}
@@ -266,6 +298,9 @@ export default function App() {
                       </div>
                       <div className="card-name">{item.name}</div>
                       <div className="card-address">📍 {item.location.address}</div>
+                      {item.isMinePending && (
+                        <div className="pending-badge">🕓 公開待ち（今はあなたにだけ表示）</div>
+                      )}
                       <div className="card-footer">
                         <span className={`condition-badge condition-${item.condition}`}>
                           {CONDITION_LABELS[item.condition]}
@@ -294,7 +329,7 @@ export default function App() {
         <button className={`mobile-tab-btn ${mobileTab === 'map' ? 'active' : ''}`} onClick={() => { setMobileTab('map'); setActiveView('map'); }}>
           <span className="tab-icon">🗺️</span>地図
         </button>
-        <button className={`mobile-tab-btn ${mobileTab === 'map' ? 'active' : ''}`} onClick={() => setShowAddForm(true)}>
+        <button className="mobile-tab-btn" onClick={() => setShowAddForm(true)}>
           <span className="tab-icon">➕</span>登録
         </button>
         <button className={`mobile-tab-btn ${mobileTab === 'list' ? 'active' : ''}`} onClick={() => { setMobileTab('list'); setActiveView('map'); }}>

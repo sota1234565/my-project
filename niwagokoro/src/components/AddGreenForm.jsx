@@ -76,11 +76,31 @@ export default function AddGreenForm({ onAdd, onClose }) {
     );
   }, []);
 
+  // 写真は共有データベースに載せるため、縮小・圧縮してから使う。
+  // 長辺1000pxまで縮め、JPEG品質0.6に。これで数十KB程度に収まる。
   function handlePhoto(e) {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => setPhoto(ev.target.result);
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1000;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          const scale = MAX / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        setPhoto(canvas.toDataURL('image/jpeg', 0.6));
+      };
+      img.onerror = () => setPhoto(ev.target.result); // 変換失敗時は元画像
+      img.src = ev.target.result;
+    };
     reader.readAsDataURL(file);
   }
 

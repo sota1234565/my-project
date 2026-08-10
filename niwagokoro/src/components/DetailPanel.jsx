@@ -51,6 +51,14 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
       </div>
 
       <div className="detail-body">
+        {/* 公開待ちの案内（自分の投稿だけに表示） */}
+        {item.isMinePending && (
+          <div className="pending-notice">
+            🕓 この投稿は公開待ちです。管理者が承認すると、他の人にも表示されます。
+            今はあなたにだけ見えています。
+          </div>
+        )}
+
         {/* 写真 */}
         {item.photo && (
           <img src={item.photo} alt={item.name} className="detail-photo" />
@@ -150,28 +158,29 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
           </button>
         </form>
 
-        {/* 登録の取り消し（自分が登録したものを削除する） */}
-        <div className="delete-section">
-          {!confirmDelete ? (
-            <button className="delete-btn" onClick={() => setConfirmDelete(true)}>
-              🗑️ この登録を取り消す
-            </button>
-          ) : (
-            <div className="delete-confirm">
-              <div className="delete-confirm-text">
-                「{item.name}」を削除します。写真や観察記録も一緒に消え、元に戻せません。よろしいですか？
+        {onDelete && (
+          <div className="delete-section">
+            {!confirmDelete ? (
+              <button className="delete-btn" onClick={() => setConfirmDelete(true)}>
+                🗑️ この登録を取り消す
+              </button>
+            ) : (
+              <div className="delete-confirm">
+                <div className="delete-confirm-text">
+                  「{item.name}」を削除します。写真や観察記録も一緒に消え、元に戻せません。よろしいですか？
+                </div>
+                <div className="delete-confirm-actions">
+                  <button className="delete-cancel-btn" onClick={() => setConfirmDelete(false)}>
+                    キャンセル
+                  </button>
+                  <button className="delete-confirm-btn" onClick={() => onDelete(item.id)}>
+                    削除する
+                  </button>
+                </div>
               </div>
-              <div className="delete-confirm-actions">
-                <button className="delete-cancel-btn" onClick={() => setConfirmDelete(false)}>
-                  キャンセル
-                </button>
-                <button className="delete-confirm-btn" onClick={() => onDelete(item.id)}>
-                  削除する
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
