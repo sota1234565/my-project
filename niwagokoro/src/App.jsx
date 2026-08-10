@@ -127,6 +127,12 @@ export default function App() {
     setActiveView('map');
   }
 
+  function handleDeleteGreen(itemId) {
+    commitItems(items.filter(item => item.id !== itemId));
+    setShowDetail(false);
+    setSelectedItem(null);
+  }
+
   const totalSupporters = items.reduce((sum, i) => sum + i.supporters.length, 0);
   const totalObs = items.reduce((sum, i) => sum + i.observations.length, 0);
   const needsCareCount = items.filter(i => i.condition === 'needs_care' || i.condition === 'poor').length;
@@ -204,6 +210,7 @@ export default function App() {
               onBack={handleBack}
               onSupport={handleSupport}
               onAddObservation={handleAddObservation}
+              onDelete={handleDeleteGreen}
             />
           ) : (
             <>

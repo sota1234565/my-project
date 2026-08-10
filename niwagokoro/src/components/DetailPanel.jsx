@@ -13,8 +13,9 @@ function getMoistureColor(val) {
   return '#e63946';
 }
 
-export default function DetailPanel({ item, currentUserId, onBack, onSupport, onAddObservation }) {
+export default function DetailPanel({ item, currentUserId, onBack, onSupport, onAddObservation, onDelete }) {
   const [obsText, setObsText] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const typeInfo = GREEN_TYPES[item.type];
   const isSupported = item.supporters.includes(currentUserId);
 
@@ -148,6 +149,29 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
             📝 記録を投稿する (+10pt)
           </button>
         </form>
+
+        {/* 登録の取り消し（自分が登録したものを削除する） */}
+        <div className="delete-section">
+          {!confirmDelete ? (
+            <button className="delete-btn" onClick={() => setConfirmDelete(true)}>
+              🗑️ この登録を取り消す
+            </button>
+          ) : (
+            <div className="delete-confirm">
+              <div className="delete-confirm-text">
+                「{item.name}」を削除します。写真や観察記録も一緒に消え、元に戻せません。よろしいですか？
+              </div>
+              <div className="delete-confirm-actions">
+                <button className="delete-cancel-btn" onClick={() => setConfirmDelete(false)}>
+                  キャンセル
+                </button>
+                <button className="delete-confirm-btn" onClick={() => onDelete(item.id)}>
+                  削除する
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

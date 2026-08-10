@@ -1050,6 +1050,54 @@ body {
   line-height: 1.5;
 }
 
+/* ── 登録の取り消し ── */
+.delete-section { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.delete-btn {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: none;
+  border: 1.5px solid #e8b4b4;
+  border-radius: var(--radius-sm);
+  color: var(--red);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.delete-btn:hover { background: #fdf0f0; }
+.delete-confirm {
+  background: #fdf0f0;
+  border: 1.5px solid #e8b4b4;
+  border-radius: var(--radius-sm);
+  padding: 0.85rem;
+}
+.delete-confirm-text { font-size: 0.82rem; color: #8a2e2e; line-height: 1.6; margin-bottom: 0.75rem; }
+.delete-confirm-actions { display: flex; gap: 0.5rem; }
+.delete-cancel-btn {
+  flex: 1;
+  padding: 0.55rem;
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-sub);
+}
+.delete-cancel-btn:hover { background: var(--bg); }
+.delete-confirm-btn {
+  flex: 1;
+  padding: 0.55rem;
+  background: var(--red);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.delete-confirm-btn:hover { background: #c92a38; }
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
