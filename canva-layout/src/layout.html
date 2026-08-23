@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>政策提言 レイアウト設計</title>
+<link rel="stylesheet" href="../assets/fonts/notosansjp.local.css">
+<style>
+@page { size: 1123px 794px; margin: 0; }
+
+*{ margin:0; padding:0; box-sizing:border-box; }
+html,body{ background:transparent; }
+body{
+  width:1123px;
+  font-family:'Noto Sans JP', sans-serif;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  font-feature-settings:"palt" 1;
+}
+
+:root{
+  --green:#7ed957;
+  --magenta:#ff158a;
+  --orange:#feae00;
+  --ink:#ffffff;
+  --dim:rgba(255,255,255,.62);
+  --dim2:rgba(255,255,255,.42);
+  --slot:rgba(255,255,255,.055);
+}
+
+/* ---------- 共通フレーム ---------- */
+.page{
+  position:relative;
+  width:1123px; height:794px;
+  overflow:hidden;
+  break-after:page; page-break-after:always;
+}
+.page:last-child{ break-after:auto; page-break-after:auto; }
+
+/* 背景写真はここ（PDFでは透明）→ Canvaでページ背景に写真を敷く */
+.veil{ position:absolute; inset:0; background:#000; opacity:.80; }
+.frame{ position:absolute; inset:0; width:1123px; height:794px; }
+
+.safe{ position:absolute; left:56px; top:52px; width:1011px; height:690px; color:var(--ink); }
+
+/* テンプレ解説ページ用の隅ラベル */
+.tag{
+  position:absolute; right:56px; top:24px;
+  font-size:12px; font-weight:700; letter-spacing:.28em;
+  color:rgba(126,217,87,.8);
+}
+
+/* ---------- BAND 1 : 結論 ---------- */
+.b1{ height:190px; display:flex; flex-direction:column; }
+.b1 > .rule{ margin-top:auto; }
+.kicker{ display:flex; align-items:baseline; gap:14px; margin-bottom:12px; }
+.kicker .num{ font-size:28px; font-weight:900; color:var(--magenta); line-height:1; }
+.kicker .ktext{ font-size:15px; font-weight:700; letter-spacing:.24em; color:var(--dim); }
+.lead{ font-size:42px; font-weight:900; line-height:1.32; letter-spacing:.01em; }
+.lead.sm{ font-size:38px; }
+.rule{ height:9px; background:var(--magenta); margin-top:16px; }
+
+/* ---------- BAND 2 : やったこと ---------- */
+.b2{ height:286px; margin-top:16px; display:grid; grid-template-columns:440px 1fr; gap:36px; }
+.shot{
+  height:240px; position:relative;
+  background:var(--slot);
+  border:2px dashed rgba(126,217,87,.5);
+  display:flex; align-items:center; justify-content:center;
+}
+.shot span{ font-size:14px; font-weight:700; letter-spacing:.26em; color:rgba(126,217,87,.72); }
+.cap{
+  margin-top:10px; font-size:14px; font-weight:700; line-height:1.5;
+  color:var(--dim); border-left:4px solid var(--green); padding-left:10px;
+}
+.facts{ display:flex; flex-direction:column; gap:14px; }
+.fact{ border-left:5px solid var(--green); padding-left:16px; }
+.fact .dt{ font-size:14px; font-weight:700; letter-spacing:.2em; color:var(--green); margin-bottom:6px; }
+.fact .dd{ font-size:19px; font-weight:500; line-height:1.55; }
+
+/* ---------- BAND 3 : 得たこと ---------- */
+.b3{ height:182px; margin-top:16px; border-top:2px solid rgba(255,255,255,.18); padding-top:18px; }
+.lbl{ display:flex; align-items:center; gap:10px; font-size:14px; font-weight:700; letter-spacing:.22em; color:var(--orange); margin-bottom:12px; }
+.lbl::before{ content:''; width:13px; height:13px; background:var(--orange); flex:none; }
+.quote{ font-size:21px; font-weight:700; line-height:1.5; }
+.quote .hl{ color:var(--orange); }
+.src{ font-size:13px; color:var(--dim); margin-top:6px; }
+.take{ font-size:18px; line-height:1.55; margin-top:10px; color:rgba(255,255,255,.88); }
+
+/* ---------- A : 章扉 ---------- */
+.cover{ height:690px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.cover .cnum{ font-size:104px; font-weight:900; color:var(--magenta); line-height:1; }
+.cover .ctitle{ font-size:72px; font-weight:900; margin-top:6px; }
+.cover .crule{ width:420px; height:10px; background:var(--magenta); margin:22px auto 0; }
+.cover .csub{ font-size:22px; font-weight:500; color:var(--dim); margin-top:26px; letter-spacing:.06em; }
+
+/* ---------- B : SPECIALIST ---------- */
+.spec-head{ display:flex; align-items:center; gap:16px; }
+.spec-head .sq{ width:34px; height:34px; background:var(--orange); flex:none; }
+.spec-head .st{ font-size:40px; font-weight:900; color:var(--orange); letter-spacing:.04em; }
+.spec-head .sorg{ margin-left:auto; font-size:17px; font-weight:700; color:var(--dim); }
+.people{ display:flex; gap:34px; margin-top:34px; flex:1; align-items:center; }
+.person{ flex:1; }
+.avatar{
+  width:100%; aspect-ratio:1/1; border-radius:50%;
+  background:var(--slot); border:2px dashed rgba(126,217,87,.5);
+  display:flex; align-items:center; justify-content:center;
+}
+.avatar span{ font-size:13px; font-weight:700; letter-spacing:.24em; color:rgba(126,217,87,.72); }
+.person .role{ font-size:14px; font-weight:500; color:var(--dim); margin-top:14px; line-height:1.5; }
+.person .name{ font-size:30px; font-weight:900; color:var(--orange); margin-top:4px; line-height:1.3; }
+.person .nrule{ height:4px; background:var(--orange); margin-top:8px; }
+.people.two .avatar{ width:210px; aspect-ratio:1/1; }
+.people.one .avatar{ width:264px; }
+.why{ margin-top:auto; border-top:2px solid rgba(255,255,255,.18); padding-top:16px; }
+.spec-body{ height:690px; display:flex; flex-direction:column; }
+
+/* ---------- D : 学び ---------- */
+.dpage{ display:flex; flex-direction:column; }
+.big{ font-size:56px; font-weight:900; line-height:1.34; }
+.reasons{ display:grid; grid-template-columns:repeat(3,1fr); gap:26px; margin-top:28px; flex:1; }
+.reason{ background:rgba(255,255,255,.05); border-top:5px solid var(--green); padding:24px 22px; display:flex; flex-direction:column; justify-content:center; }
+.reason .rbig{ font-size:44px; font-weight:900; color:rgba(126,217,87,.55); line-height:1; margin-bottom:14px; }
+.reason .rn{ font-size:13px; font-weight:700; letter-spacing:.2em; color:var(--green); }
+.reason .rt{ font-size:20px; font-weight:700; line-height:1.6; margin-top:10px; }
+.closing{ margin-top:26px; font-size:19px; line-height:1.6; color:rgba(255,255,255,.9); border-left:5px solid var(--magenta); padding-left:16px; }
+
+/* ---------- E : フォト ---------- */
+.photo-full{ height:470px; background:var(--slot); border:2px dashed rgba(126,217,87,.5); display:flex; align-items:center; justify-content:center; }
+.photo-full span{ font-size:15px; font-weight:700; letter-spacing:.26em; color:rgba(126,217,87,.72); }
+
+/* ---------- 解説ページ ---------- */
+.doc h2{ font-size:44px; font-weight:900; line-height:1.3; }
+.doc .sub{ font-size:18px; color:var(--dim); margin-top:12px; line-height:1.7; }
+.docflex{ display:flex; flex-direction:column; }
+.steps{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin-top:34px; }
+.steps.grow{ flex:1; }
+.step.grow{ display:flex; flex-direction:column; }
+.step{ border-top:5px solid var(--green); padding-top:16px; }
+.step .sn{ font-size:13px; font-weight:700; letter-spacing:.2em; color:var(--green); }
+.step .sh{ font-size:22px; font-weight:900; margin-top:8px; line-height:1.4; }
+.step .sp{ font-size:15px; line-height:1.68; color:rgba(255,255,255,.82); margin-top:8px; }
+
+table.fix{ width:100%; border-collapse:collapse; margin-top:22px; }
+table.fix th, table.fix td{ text-align:left; vertical-align:top; padding:10px 12px; font-size:15px; line-height:1.55; border-bottom:1px solid rgba(255,255,255,.14); }
+table.fix th{ font-size:13px; font-weight:700; letter-spacing:.16em; color:var(--green); border-bottom:2px solid var(--green); }
+table.fix td.q{ color:rgba(255,255,255,.95); font-weight:500; width:47%; }
+table.fix td.a{ color:var(--orange); font-weight:700; }
+
+.guide{ color:rgba(255,255,255,.34); font-weight:400; }
+.count{ font-size:13px; font-weight:700; letter-spacing:.14em; color:var(--magenta); }
+</style>
+</head>
+<body>
+
+<!-- ラフな縁のフィルタ定義（全ページ共有） -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="rough1" x="-6%" y="-6%" width="112%" height="112%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="4" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="10" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="rough2" x="-6%" y="-6%" width="112%" height="112%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="3" seed="23" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="rough3" x="-6%" y="-6%" width="112%" height="112%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" seed="41" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<template id="frame-tpl"></template>
+
+<!-- ============ 01 : 表紙 / 使い方 ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="tag">TEMPLATE · 説明ページ</div>
+  <div class="safe doc docflex">
+    <div class="kicker"><span class="num">00</span><span class="ktext">CANVA LAYOUT BASE</span></div>
+    <h2>10秒で伝わる<br>政策提言レイアウト</h2>
+    <div class="rule" style="width:520px"></div>
+    <div class="sub" style="max-width:900px">
+      1123 × 794 px ＝ 現在のCanvaと同じ寸法。貼り付ければ等倍で収まります。<br>
+      背景写真の位置は透明にしてあります。Canvaでページ背景に会議室の写真を敷けば、今と同じ見た目になります。
+    </div>
+    <div class="steps grow">
+      <div class="step grow">
+        <div class="sn">STEP 1</div>
+        <div class="sh">PDFをCanvaに読み込む</div>
+        <div class="sp">アップロード → デザインに読み込み。1ページ＝1スライドで入ります。</div>
+      </div>
+      <div class="step grow">
+        <div class="sn">STEP 2</div>
+        <div class="sh">背景に写真を敷く</div>
+        <div class="sp">会議室の写真をページ背景に設定。緑の縁と暗幕はPDF側に入っています。</div>
+      </div>
+      <div class="step grow">
+        <div class="sn">STEP 3</div>
+        <div class="sh">点線の枠に写真を入れる</div>
+        <div class="sp">緑の点線＝写真の置き場所。枠の大きさは変えず、写真だけ差し替えます。</div>
+      </div>
+    </div>
+    <div class="closing" style="margin-top:26px">
+      P02 に「指摘 → どう直したか」、P03 に寸法の定規、P04〜P08 に空の雛形、P09 以降に現在の政策提言12ページを新レイアウトで入れ直したものが入っています。
+    </div>
+  </div>
+</section>
+
+<!-- ============ 02 : 指摘 → 対応 ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="tag">TEMPLATE · 説明ページ</div>
+  <div class="safe doc">
+    <div class="kicker"><span class="num">00</span><span class="ktext">WHAT CHANGED</span></div>
+    <h2 style="font-size:38px">受けた指摘を、レイアウトで解く</h2>
+    <div class="rule" style="width:420px;height:8px;margin-top:12px"></div>
+    <table class="fix">
+      <tr><th>授業で言われたこと</th><th>このレイアウトでの答え</th></tr>
+      <tr><td class="q">「文字数多すぎて本当に何言いたいのかわかんない」</td><td class="a">1ページ約600字 → 約150字。結論は先頭25字に固定</td></tr>
+      <tr><td class="q">「目指すは十秒で伝わる」</td><td class="a">最上段の1行だけで意味が通る。残りは読みたい人向け</td></tr>
+      <tr><td class="q">「型が全部同じだからフォーマットを一個作っちゃえばいい。上から下に読む」</td><td class="a">全ページ共通の3段組。①結論 ②やったこと ③得たこと</td></tr>
+      <tr><td class="q">「何をしたのかが一言。詳細が下半分、上の部分で何を学んだのか」</td><td class="a">結論をマゼンタの線で区切り、band 1 に独立させた</td></tr>
+      <tr><td class="q">「どの写真が何なのか分かるように、写真を連携させてほしい」</td><td class="a">全ての写真枠にキャプション欄を必須で付けた</td></tr>
+      <tr><td class="q">「せっかくの写真がマジで見せる気なくて」</td><td class="a">写真枠を 440 × 240 px に拡大し、本文の左隣に固定</td></tr>
+      <tr><td class="q">「自分なりの意図がありそうっていうのが大事」</td><td class="a">人物ページに「なぜこの人に提言したのか」を1行追加</td></tr>
+      <tr><td class="q">「一枚の情報量減らしたっていいし、スライド増やしたっていい」</td><td class="a">入り切らない回は「提言」と「反応・学び」に分割できる型に</td></tr>
+      <tr><td class="q">「ちゃんと読ませるというところ。こんだけの文字数でちゃんと読むのか」</td><td class="a">本文は19px・1行28字まで。超えたら文を割る</td></tr>
+      <tr><td class="q">「レイアウトがミスってたら全部ミスる。早くちゃんと決めて、その上でやれば問題ない」</td><td class="a">この20ページが、その決めたレイアウトそのもの</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 03 : 定規 ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="tag">TEMPLATE · 定規</div>
+  <div class="safe doc">
+    <div class="kicker"><span class="num">00</span><span class="ktext">THE RULER</span></div>
+    <h2 style="font-size:38px">3段フォーマットの寸法</h2>
+    <div class="rule" style="width:340px;height:8px;margin-top:12px"></div>
+    <div style="display:grid;grid-template-columns:600px 1fr;gap:40px;margin-top:26px">
+      <svg viewBox="0 0 600 420" style="width:600px;height:420px">
+        <rect x="0" y="0" width="600" height="420" fill="rgba(255,255,255,.04)"/>
+        <rect x="30" y="18" width="540" height="94" fill="rgba(255,21,138,.16)" stroke="#ff158a" stroke-width="2"/>
+        <text x="44" y="52" fill="#ff158a" font-size="17" font-weight="700" font-family="Noto Sans JP">BAND 1 ／ 結論</text>
+        <text x="44" y="78" fill="#ffffff" font-size="15" font-family="Noto Sans JP">高さ 190px ・ 42px / w900 ・ 25字以内</text>
+        <text x="44" y="100" fill="rgba(255,255,255,.6)" font-size="13" font-family="Noto Sans JP">下にマゼンタ 9px の区切り線</text>
+
+        <rect x="30" y="124" width="540" height="160" fill="rgba(126,217,87,.14)" stroke="#7ed957" stroke-width="2"/>
+        <text x="44" y="152" fill="#7ed957" font-size="17" font-weight="700" font-family="Noto Sans JP">BAND 2 ／ やったこと　高さ 286px</text>
+        <rect x="44" y="166" width="200" height="104" fill="rgba(255,255,255,.07)" stroke="#7ed957" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <text x="60" y="222" fill="rgba(126,217,87,.85)" font-size="13" font-family="Noto Sans JP">写真 440×240px</text>
+        <text x="262" y="188" fill="#ffffff" font-size="14" font-family="Noto Sans JP">提言内容　40字以内</text>
+        <text x="262" y="222" fill="#ffffff" font-size="14" font-family="Noto Sans JP">提言相手　40字以内</text>
+        <text x="262" y="256" fill="#ffffff" font-size="14" font-family="Noto Sans JP">提言理由　40字以内</text>
+
+        <rect x="30" y="296" width="540" height="106" fill="rgba(254,174,0,.14)" stroke="#feae00" stroke-width="2"/>
+        <text x="44" y="324" fill="#feae00" font-size="17" font-weight="700" font-family="Noto Sans JP">BAND 3 ／ 得たこと</text>
+        <text x="44" y="350" fill="#ffffff" font-size="15" font-family="Noto Sans JP">高さ 182px ・ 相手の発言を引用 21px</text>
+        <text x="44" y="374" fill="rgba(255,255,255,.6)" font-size="13" font-family="Noto Sans JP">＋ 自分の一言 18px ／ 合計60字以内</text>
+      </svg>
+      <div>
+        <div class="step" style="border-top-color:var(--magenta)">
+          <div class="sn" style="color:var(--magenta)">RULE 1</div>
+          <div class="sh" style="font-size:20px">先頭の1行だけで伝わるか</div>
+          <div class="sp">band 1 が通らなければ書き直す。ここが通れば10秒で伝わる。</div>
+        </div>
+        <div class="step" style="margin-top:22px">
+          <div class="sn">RULE 2</div>
+          <div class="sh" style="font-size:20px">1行は28字まで</div>
+          <div class="sp">本文19px・行間1.55。超えたら文を分割する。</div>
+        </div>
+        <div class="step" style="margin-top:22px;border-top-color:var(--orange)">
+          <div class="sn" style="color:var(--orange)">RULE 3</div>
+          <div class="sh" style="font-size:20px">写真には必ずキャプション</div>
+          <div class="sp">誰と・どこで・何をした写真か。無いなら写真を外す。</div>
+        </div>
+        <div class="step" style="margin-top:22px;border-top-color:rgba(255,255,255,.4)">
+          <div class="sn" style="color:var(--dim)">RULE 4</div>
+          <div class="sh" style="font-size:20px">余白は削らない</div>
+          <div class="sp">外周56px・段間16px は固定。足りなければページを増やす。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 04 : マスターA 章扉（雛形） ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="tag">MASTER A · 章扉</div>
+  <div class="safe">
+    <div class="cover">
+      <div class="cnum">5</div>
+      <div class="ctitle guide">章タイトル（10字以内）</div>
+      <div class="crule"></div>
+      <div class="csub guide">この章で何をしたのか（30字以内）</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 : マスターB SPECIALIST（雛形） ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="tag">MASTER B · 人物</div>
+  <div class="safe spec-body">
+    <div class="spec-head"><div class="sq"></div><div class="st">SPECIALIST</div><div class="sorg guide">所属団体名</div></div>
+    <div class="people two">
+      <div class="person"><div class="avatar"><span>顔写真</span></div><div class="role guide">肩書き（20字以内）</div><div class="name guide">氏名</div><div class="nrule"></div></div>
+      <div class="person"><div class="avatar"><span>顔写真</span></div><div class="role guide">肩書き（20字以内）</div><div class="name guide">氏名</div><div class="nrule"></div></div>
+      <div class="person"><div class="avatar"><span>顔写真</span></div><div class="role guide">肩書き（20字以内）</div><div class="name guide">氏名</div><div class="nrule"></div></div>
+    </div>
+    <div class="why">
+      <div class="lbl">なぜこの人に提言したのか</div>
+      <div class="quote guide">この人でなければならない理由を1行で（45字以内）</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 06 : マスターC 提言本編（雛形） ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="tag">MASTER C · 提言本編</div>
+  <div class="safe">
+    <div class="b1">
+      <div class="kicker"><span class="num">01</span><span class="ktext">政策提言</span></div>
+      <div class="lead guide">結論を一言で。25字以内。</div>
+      <div class="rule"></div>
+    </div>
+    <div class="b2">
+      <div>
+        <div class="shot"><span>写真 440 × 240</span></div>
+        <div class="cap guide">キャプション：誰と・どこで・何をした写真か（40字以内）</div>
+      </div>
+      <div class="facts">
+        <div class="fact"><div class="dt">提言内容</div><div class="dd guide">何を提言したか（40字以内）</div></div>
+        <div class="fact"><div class="dt">提言相手</div><div class="dd guide">誰に提言したか／その人の立場（40字以内）</div></div>
+        <div class="fact"><div class="dt">提言理由</div><div class="dd guide">なぜ提言したか（40字以内）</div></div>
+      </div>
+    </div>
+    <div class="b3">
+      <div class="lbl">得たこと</div>
+      <div class="quote guide">「相手が実際に言った言葉をそのまま引用する」</div>
+      <div class="src guide">— 氏名・肩書き</div>
+      <div class="take guide">その言葉から自分が得たことを1行で（40字以内）</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 07 : マスターD 学び（雛形） ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="tag">MASTER D · 学び</div>
+  <div class="safe dpage">
+    <div class="kicker"><span class="num">◆</span><span class="ktext">LEARNING</span></div>
+    <div class="big guide">学びを一言で。<br>30字以内で言い切る。</div>
+    <div class="rule" style="margin-top:22px"></div>
+    <div class="reasons">
+      <div class="reason"><div class="rbig">01</div><div class="rn">指摘された</div><div class="rt guide">何を指摘されたか（40字以内）</div></div>
+      <div class="reason"><div class="rbig">02</div><div class="rn">分かった</div><div class="rt guide">そこで何が分かったか（40字以内）</div></div>
+      <div class="reason"><div class="rbig">03</div><div class="rn">変わった</div><div class="rt guide">自分の何が変わったか（40字以内）</div></div>
+    </div>
+    <div class="closing guide">この学びが、他のどんな場面に効くのかを1行で（50字以内）</div>
+  </div>
+</section>
+
+<!-- ============ 08 : マスターE フォト（雛形） ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="tag">MASTER E · フォト</div>
+  <div class="safe">
+    <div class="kicker"><span class="num">05</span><span class="ktext">SCENE</span></div>
+    <div class="lead sm guide">この写真で何を見せたいか（20字以内）</div>
+    <div class="rule" style="margin-top:14px"></div>
+    <div class="photo-full" style="margin-top:20px"><span>写真 1011 × 470</span></div>
+    <div class="cap guide" style="font-size:16px">キャプション：いつ・どこで・誰と・何をした場面か（50字以内）</div>
+  </div>
+</section>
+
+<!-- ============ 09 : 章扉（実データ） ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="safe">
+    <div class="cover">
+      <div class="cnum">5</div>
+      <div class="ctitle">政策提言</div>
+      <div class="crule"></div>
+      <div class="csub">児童養護施設の子どもと地域企業をつなぐ場を、4者に提言した</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10 : SPECIALIST 松長由美絵議員 ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="safe spec-body">
+    <div class="spec-head"><div class="sq"></div><div class="st">SPECIALIST</div><div class="sorg">藤沢市議会</div></div>
+    <div class="people one">
+      <div class="person" style="flex:0 0 264px"><div class="avatar"><span>顔写真</span></div></div>
+      <div class="person" style="padding-top:8px">
+        <div class="role">藤沢市議会議員</div>
+        <div class="name" style="font-size:44px">松長 由美絵 議員</div>
+        <div class="nrule" style="width:420px"></div>
+        <div class="fact" style="margin-top:26px"><div class="dt">所属委員会</div><div class="dd">子ども文教常任委員会／令和8年度予算等特別委員会（委員長）</div></div>
+      </div>
+    </div>
+    <div class="why">
+      <div class="lbl">なぜこの人に提言したのか</div>
+      <div class="quote">子ども文教常任委員会に所属し、<span class="hl">市の子ども政策に直接関われる立場</span>にあるから。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 11 : 提言1 松長議員 ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="safe">
+    <div class="b1">
+      <div class="kicker"><span class="num">01</span><span class="ktext">藤沢市議会議員 松長由美絵議員へ</span></div>
+      <div class="lead">施設を出た後に頼れる人がいない。<br>だから今、つながる場を提言した。</div>
+      <div class="rule"></div>
+    </div>
+    <div class="b2">
+      <div>
+        <div class="shot"><span>写真 440 × 240</span></div>
+        <div class="cap">藤沢市議会にて、松長由美絵議員へ提言（2026年）</div>
+      </div>
+      <div class="facts">
+        <div class="fact"><div class="dt">提言内容</div><div class="dd">児童養護施設の子どもたちと地域企業との、緩やかな交流機会の創出</div></div>
+        <div class="fact"><div class="dt">提言相手</div><div class="dd">藤沢市議会議員 松長由美絵議員（子ども文教常任委員会）</div></div>
+        <div class="fact"><div class="dt">提言理由</div><div class="dd">施設で暮らす子とケアリーバーが置かれた状況を、活動の中で目の当たりにしたから</div></div>
+      </div>
+    </div>
+    <div class="b3">
+      <div class="lbl">得たこと</div>
+      <div class="quote">退所後は<span class="hl">自ら生活基盤を築かなければならない</span>。しかし過去の経験から対人関係に難しさを抱え、職場でつまずき、離職に至るケースも多い。</div>
+      <div class="take">支援が切れる場所ではなく、切れる前に関係をつくる場所が要る。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 12 : SPECIALIST 平野みぎわ議員 ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="safe spec-body">
+    <div class="spec-head"><div class="sq"></div><div class="st">SPECIALIST</div><div class="sorg">神奈川県議会</div></div>
+    <div class="people one">
+      <div class="person" style="flex:0 0 264px"><div class="avatar"><span>顔写真</span></div></div>
+      <div class="person" style="padding-top:8px">
+        <div class="role">神奈川県議会議員</div>
+        <div class="name" style="font-size:44px">平野 みぎわ 議員</div>
+        <div class="nrule" style="width:420px"></div>
+        <div class="fact" style="margin-top:26px"><div class="dt">所属委員会</div><div class="dd">文教常任委員会／生活・教育政策特別委員会</div></div>
+      </div>
+    </div>
+    <div class="why">
+      <div class="lbl">なぜこの人に提言したのか</div>
+      <div class="quote"><span class="hl">ソーシャルワーカーとして20年</span>の経験を持ち、現場と県政の両方を知る議員だから。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 13 : 提言2 平野議員 ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="safe">
+    <div class="b1">
+      <div class="kicker"><span class="num">02</span><span class="ktext">神奈川県議会議員 平野みぎわ議員へ</span></div>
+      <div class="lead">社会的養護の話は、<br>県議会に一度も上がっていなかった。</div>
+      <div class="rule"></div>
+    </div>
+    <div class="b2">
+      <div>
+        <div class="shot"><span>写真 440 × 240</span></div>
+        <div class="cap">意見交換を終えて、平野みぎわ議員と（2026年）</div>
+      </div>
+      <div class="facts">
+        <div class="fact"><div class="dt">提言内容</div><div class="dd">児童養護施設の子どもたちと地域企業との、緩やかな交流機会の創出</div></div>
+        <div class="fact"><div class="dt">提言相手</div><div class="dd">神奈川県議会議員 平野みぎわ議員（ソーシャルワーカー歴20年）</div></div>
+        <div class="fact"><div class="dt">分かったこと</div><div class="dd">昨年所属した厚生常任委員会で、社会的養護は議案に一度も上がらなかった</div></div>
+      </div>
+    </div>
+    <div class="b3">
+      <div class="lbl">得たこと</div>
+      <div class="quote">「秋元さんのような若者世代が現場の声を聞き、伝え続け、<span class="hl">行政と現場の橋渡し役</span>になってほしい。私もできることは協力します。」</div>
+      <div class="src">— 神奈川県議会議員 平野みぎわ議員</div>
+      <div class="take">広域行政ほど、一人の声は遠い。現場を知る自分が運ぶしかない。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 14 : SPECIALIST 社会福祉協議会 ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="safe spec-body">
+    <div class="spec-head"><div class="sq"></div><div class="st">SPECIALIST</div><div class="sorg">藤沢市社会福祉協議会</div></div>
+    <div class="people two" style="justify-content:center;gap:80px">
+      <div class="person" style="flex:0 0 300px">
+        <div class="avatar" style="width:210px;margin:0 auto"><span>顔写真</span></div>
+        <div class="role" style="text-align:center">くらしよりそい課 課長<br>コミュニティソーシャルワーカー</div>
+        <div class="name" style="text-align:center">松本 美由紀 氏</div>
+        <div class="nrule"></div>
+      </div>
+      <div class="person" style="flex:0 0 300px">
+        <div class="avatar" style="width:210px;margin:0 auto"><span>顔写真</span></div>
+        <div class="role" style="text-align:center">地域福祉活動センター<br>在宅福祉サービスセンター センター長</div>
+        <div class="name" style="text-align:center">露木 信晴 氏</div>
+        <div class="nrule"></div>
+      </div>
+    </div>
+    <div class="why">
+      <div class="lbl">なぜこの人たちに提案したのか</div>
+      <div class="quote">市内の児童養護施設と連携し、<span class="hl">企業からの寄付や相談を受け取る側</span>にいるから。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 15 : 提言3 社協 ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="safe">
+    <div class="b1">
+      <div class="kicker"><span class="num">03</span><span class="ktext">藤沢市社会福祉協議会へ</span></div>
+      <div class="lead">施設・企業・行政が横断的に話す場は、<br>「ないのが現状」だった。</div>
+      <div class="rule"></div>
+    </div>
+    <div class="b2">
+      <div>
+        <div class="shot"><span>写真 440 × 240</span></div>
+        <div class="cap">藤沢市社会福祉協議会にて、松本氏・露木氏と意見交換（2026年）</div>
+      </div>
+      <div class="facts">
+        <div class="fact"><div class="dt">提案内容</div><div class="dd">市内の児童養護施設と連携する社協に、地域企業との交流機会の創出を提案</div></div>
+        <div class="fact"><div class="dt">提案相手</div><div class="dd">藤沢市社会福祉協議会 松本美由紀 氏／露木信晴 氏</div></div>
+        <div class="fact"><div class="dt">聞いたこと</div><div class="dd">企業からの申し出は物品寄付が中心で、子どもと直接交流する機会は少ない</div></div>
+      </div>
+    </div>
+    <div class="b3">
+      <div class="lbl">得たこと</div>
+      <div class="quote">「施設・企業・関係機関が横断的に話し合う場は、<span class="hl">ないのが現状かもしれない</span>。とても重要な視点だと思う。」</div>
+      <div class="src">— 藤沢市社会福祉協議会 露木信晴 氏</div>
+      <div class="take">「かわいそうな子」というイメージを変えるには、まず接点をつくるしかない。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 16 : SPECIALIST 子ども青少年部 ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="safe spec-body">
+    <div class="spec-head"><div class="sq"></div><div class="st">SPECIALIST</div><div class="sorg">藤沢市 子ども青少年部</div></div>
+    <div class="people two">
+      <div class="person">
+        <div class="avatar" style="width:190px;margin:0 auto"><span>顔写真</span></div>
+        <div class="role" style="text-align:center">参事 兼 子ども総務課長</div>
+        <div class="name" style="text-align:center;font-size:27px">杉田 弘 氏</div>
+        <div class="nrule"></div>
+      </div>
+      <div class="person">
+        <div class="avatar" style="width:190px;margin:0 auto"><span>顔写真</span></div>
+        <div class="role" style="text-align:center">こども家庭センター長</div>
+        <div class="name" style="text-align:center;font-size:27px">井出 猛 氏</div>
+        <div class="nrule"></div>
+      </div>
+      <div class="person">
+        <div class="avatar" style="width:190px;margin:0 auto"><span>顔写真</span></div>
+        <div class="role" style="text-align:center">青少年課長</div>
+        <div class="name" style="text-align:center;font-size:27px">倉本 一宏 氏</div>
+        <div class="nrule"></div>
+      </div>
+    </div>
+    <div class="why">
+      <div class="lbl">なぜこの人たちに提言したのか</div>
+      <div class="quote">藤沢市の児童養護施設に関わる<span class="hl">実務を担う部署</span>であり、検討を動かせる立場だから。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 17 : 提言4 子ども青少年部 ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="safe">
+    <div class="b1">
+      <div class="kicker"><span class="num">04</span><span class="ktext">藤沢市 子ども青少年部へ</span></div>
+      <div class="lead">施設の子どもと企業の接点は、<br>一時的なもので終わっていた。</div>
+      <div class="rule"></div>
+    </div>
+    <div class="b2">
+      <div>
+        <div class="shot"><span>写真 440 × 240</span></div>
+        <div class="cap">藤沢市役所にて、子ども青少年部の3氏へ政策提言（2026年）</div>
+      </div>
+      <div class="facts">
+        <div class="fact"><div class="dt">提言内容</div><div class="dd">藤沢市子ども家庭センターへ、地域企業との緩やかな交流機会の創出を提言</div></div>
+        <div class="fact"><div class="dt">提言相手</div><div class="dd">藤沢市子ども青少年部 杉田弘 氏／井出猛 氏／倉本一宏 氏</div></div>
+        <div class="fact"><div class="dt">分かったこと</div><div class="dd">施設の子どもと企業の接点が、単発で途切れてしまっていること</div></div>
+      </div>
+    </div>
+    <div class="b3">
+      <div class="lbl">得たこと</div>
+      <div class="quote">「当事者からの声は少ないため、現場に近い視点から声を聞けて気づきがたくさんあった。<span class="hl">ぜひ、今後は検討に向けて動いていきたい</span>」</div>
+      <div class="src">— 藤沢市子ども青少年部 参事 兼 子ども総務課長 杉田 弘 氏</div>
+      <div class="take">19歳という年齢の近さが、退所者の実情を自分事として訴える力になった。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 18 : 学び ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="safe dpage">
+    <div class="kicker"><span class="num">◆</span><span class="ktext">政策提言を通じて学んだこと</span></div>
+    <div class="big">政策は、誰かの利益であると同時に、<br>誰かの負担でもある。</div>
+    <div class="rule" style="margin-top:22px"></div>
+    <div class="reasons">
+      <div class="reason"><div class="rbig">01</div><div class="rn">指摘された</div><div class="rt">子どもたちの利益に意識が偏り、企業や経済団体への配慮が足りない、と。</div></div>
+      <div class="reason"><div class="rbig">02</div><div class="rn">分かった</div><div class="rt">既存の類似取組との違い、子どもの安全面など、検討すべき観点は多い。</div></div>
+      <div class="reason"><div class="rbig">03</div><div class="rn">変わった</div><div class="rt">一部の利益ではなく、利害の均衡・公平性・安全性を先に考えるようになった。</div></div>
+    </div>
+    <div class="closing">この見方は行政に限らない。身近な集団で民主的に物事を決めるときにも、同じことが要る。</div>
+  </div>
+</section>
+
+<!-- ============ 19 : 章扉 子ども・若者委員会 ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="safe">
+    <div class="cover">
+      <div class="cnum">6</div>
+      <div class="ctitle">子ども・若者委員会</div>
+      <div class="crule"></div>
+      <div class="csub guide">この委員会で何をしたのかを30字以内で</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 20 : 子ども・若者委員会へ参加 ============ -->
+<section class="page">
+  <div class="veil"></div>
+  <svg class="frame" viewBox="0 0 1123 794"><g fill="none" stroke="#7ed957"><rect x="15" y="15" width="1093" height="764" stroke-width="11" filter="url(#rough1)"/><rect x="15" y="15" width="1093" height="764" stroke-width="6" filter="url(#rough2)"/><rect x="15" y="15" width="1093" height="764" stroke-width="3" filter="url(#rough3)"/></g></svg>
+  <div class="safe">
+    <div class="b1">
+      <div class="kicker"><span class="num">05</span><span class="ktext">子ども・若者委員会へ参加</span></div>
+      <div class="lead guide">ここで一番伝えたいことを25字以内で</div>
+      <div class="rule"></div>
+    </div>
+    <div class="b2">
+      <div>
+        <div class="shot"><span>写真 440 × 240</span></div>
+        <div class="cap guide">キャプション：いつ・どこで・誰と・何をした写真か（40字以内）</div>
+      </div>
+      <div class="facts">
+        <div class="fact"><div class="dt">参加したこと</div><div class="dd guide">何に参加したか（40字以内）</div></div>
+        <div class="fact"><div class="dt">同席した人</div><div class="dd guide">誰がいたか／その立場（40字以内）</div></div>
+        <div class="fact"><div class="dt">参加理由</div><div class="dd guide">なぜ参加したか（40字以内）</div></div>
+      </div>
+    </div>
+    <div class="b3">
+      <div class="lbl">得たこと</div>
+      <div class="quote guide">「その場で誰かが実際に言った言葉をそのまま引用する」</div>
+      <div class="src guide">— 氏名・肩書き</div>
+      <div class="take guide">その言葉から自分が得たことを1行で（40字以内）</div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
