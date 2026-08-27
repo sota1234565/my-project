@@ -7,12 +7,6 @@ const CONDITION_LABELS = {
   poor: '不良',
 };
 
-function getMoistureColor(val) {
-  if (val >= 70) return '#52b788';
-  if (val >= 40) return '#f4a261';
-  return '#e63946';
-}
-
 export default function DetailPanel({ item, currentUserId, onBack, onSupport, onAddObservation, onDelete }) {
   const [obsText, setObsText] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -65,46 +59,39 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
         )}
 
         {/* 説明 */}
-        <div className="section-title">📋 説明</div>
-        <p className="description-text">{item.description}</p>
+        {item.description && (
+          <>
+            <div className="section-title">📋 説明</div>
+            <p className="description-text">{item.description}</p>
+          </>
+        )}
 
-        {/* データ */}
-        <div className="section-title">📊 データ</div>
-        <div className="stats-grid">
-          {item.plantedYear && (
-            <div className="stat-box">
-              <div className="stat-label">植栽年</div>
-              <div className="stat-value">{item.plantedYear}<span className="stat-unit">年</span></div>
+        {/* データ（記録がある場合のみ。実際に測った値だけを出す） */}
+        {(item.plantedYear || item.height != null || item.trunkDiameter != null) && (
+          <>
+            <div className="section-title">📊 データ</div>
+            <div className="stats-grid">
+              {item.plantedYear && (
+                <div className="stat-box">
+                  <div className="stat-label">植栽年</div>
+                  <div className="stat-value">{item.plantedYear}<span className="stat-unit">年</span></div>
+                </div>
+              )}
+              {item.height != null && (
+                <div className="stat-box">
+                  <div className="stat-label">高さ</div>
+                  <div className="stat-value">{item.height}<span className="stat-unit">m</span></div>
+                </div>
+              )}
+              {item.trunkDiameter != null && (
+                <div className="stat-box">
+                  <div className="stat-label">幹回り</div>
+                  <div className="stat-value">{item.trunkDiameter}<span className="stat-unit">cm</span></div>
+                </div>
+              )}
             </div>
-          )}
-          {item.height != null && (
-            <div className="stat-box">
-              <div className="stat-label">高さ</div>
-              <div className="stat-value">{item.height}<span className="stat-unit">m</span></div>
-            </div>
-          )}
-          {item.trunkDiameter != null && (
-            <div className="stat-box">
-              <div className="stat-label">幹回り</div>
-              <div className="stat-value">{item.trunkDiameter}<span className="stat-unit">cm</span></div>
-            </div>
-          )}
-          <div className="stat-box">
-            <div className="stat-label">水分量</div>
-            <div className="stat-value" style={{ color: getMoistureColor(item.moisture) }}>
-              {item.moisture}<span className="stat-unit">%</span>
-            </div>
-            <div className="moisture-bar-bg">
-              <div
-                className="moisture-bar-fill"
-                style={{
-                  width: `${item.moisture}%`,
-                  background: getMoistureColor(item.moisture),
-                }}
-              />
-            </div>
-          </div>
-        </div>
+          </>
+        )}
 
         {/* タグ */}
         {item.tags.length > 0 && (

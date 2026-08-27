@@ -63,17 +63,15 @@ function SetCenter({ center }) {
 }
 
 export default function AddGreenForm({ onAdd, onClose }) {
+  // 項目は、通りがかりの人がその場で答えられるものだけに絞る。
+  // 学名・植栽年・高さ・タグは専門知識が要るため置かない。
   const [form, setForm] = useState({
     type: 'tree',
     name: '',
-    scientificName: '',
     address: '',
     lat: '',
     lng: '',
-    plantedYear: '',
-    height: '',
     description: '',
-    tags: '',
   });
   const [gpsStatus, setGpsStatus] = useState('idle');
   const [addressLoading, setAddressLoading] = useState(false);
@@ -162,22 +160,13 @@ export default function AddGreenForm({ onAdd, onClose }) {
     onAdd({
       type: form.type,
       name: form.name.trim(),
-      scientificName: form.scientificName.trim() || null,
       location: {
-        lat: parseFloat(form.lat) || 35.3386,
-        lng: parseFloat(form.lng) || 139.4875,
+        lat: parseFloat(form.lat) || FUJISAWA_CENTER[0],
+        lng: parseFloat(form.lng) || FUJISAWA_CENTER[1],
         address: form.address.trim() || '藤沢市',
       },
-      plantedYear: form.plantedYear ? parseInt(form.plantedYear) : null,
-      height: form.height ? parseFloat(form.height) : null,
-      trunkDiameter: null,
-      condition: 'healthy',
-      moisture: 60,
       description: form.description.trim(),
       photo: photo || null,
-      observations: [],
-      supporters: [],
-      tags: form.tags.split(/[,、\s]+/).map(t => t.trim()).filter(Boolean),
     });
   }
 
@@ -269,29 +258,14 @@ export default function AddGreenForm({ onAdd, onClose }) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">学名（任意）</label>
-            <input className="form-input" name="scientificName" placeholder="例：Prunus × yedoensis" value={form.scientificName} onChange={handleChange} />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">説明</label>
-            <textarea className="form-textarea" name="description" placeholder="この木・花・雨庭について教えてください" value={form.description} onChange={handleChange} />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-            <div className="form-group">
-              <label className="form-label">植栽年</label>
-              <input className="form-input" name="plantedYear" type="number" placeholder="例：2010" value={form.plantedYear} onChange={handleChange} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">高さ (m)</label>
-              <input className="form-input" name="height" type="number" step="0.1" placeholder="例：8.5" value={form.height} onChange={handleChange} />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">タグ（カンマ区切り）</label>
-            <input className="form-input" name="tags" placeholder="例：桜、街路樹、春" value={form.tags} onChange={handleChange} />
+            <label className="form-label">ひとこと（任意）</label>
+            <textarea
+              className="form-textarea"
+              name="description"
+              placeholder="気づいたことを自由に。例：毎年きれいに咲きます／最近元気がなさそう"
+              value={form.description}
+              onChange={handleChange}
+            />
           </div>
 
           <div className="form-actions">

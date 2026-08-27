@@ -395,21 +395,6 @@ body {
 
 .stat-unit { font-size: 0.68rem; color: var(--text-muted); margin-left: 0.15rem; }
 
-/* ── Moisture bar ── */
-.moisture-bar-bg {
-  background: var(--border);
-  border-radius: 4px;
-  height: 7px;
-  margin-top: 0.4rem;
-  overflow: hidden;
-}
-
-.moisture-bar-fill {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
-}
-
 /* ── Supporter section ── */
 .supporter-section {
   background: linear-gradient(135deg, #fff0f6 0%, #ffe8f2 100%);
