@@ -263,8 +263,9 @@ export default function GreenMap({ items, selectedItem, onSelectItem }) {
         </MarkerClusterGroup>
       </MapContainer>
 
-      {/* まだ何も登録されていないときの案内 */}
-      {items.length === 0 && (
+      {/* まだ何も登録されていないときの案内。
+          現在地を表示したら地図の邪魔になるので消す。 */}
+      {items.length === 0 && !userPos && (
         <div className="map-empty-hint">
           <div className="map-empty-emoji">🌱</div>
           <div className="map-empty-title">地図はまだ空です</div>
