@@ -104,24 +104,56 @@ export default function GreenMap({ items, selectedItem, onSelectItem }) {
   const [accuracy, setAccuracy] = useState(null);
   const [watching, setWatching] = useState(false);
   const [following, setFollowing] = useState(false);
-  const [locError, setLocError] = useState(false);
+  const [locError, setLocError] = useState(null); // null | 'denied' | 'timeout' | 'unavailable' | 'unsupported'
   const watchIdRef = useRef(null);
 
   // 位置の追従開始／停止
   useEffect(() => {
     if (!watching || !navigator.geolocation) return;
 
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (pos) => {
-        setUserPos([pos.coords.latitude, pos.coords.longitude]);
-        setAccuracy(pos.coords.accuracy);
-        setLocError(false);
-      },
-      () => { setLocError(true); setWatching(false); setFollowing(false); },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 3000 }
-    );
+    let cancelled = false;
+    let gotFix = false;
+
+    const apply = (pos) => {
+      if (cancelled) return;
+      gotFix = true;
+      setUserPos([pos.coords.latitude, pos.coords.longitude]);
+      setAccuracy(pos.coords.accuracy);
+      setLocError(null);
+    };
+
+    const onError = (err) => {
+      if (cancelled) return;
+      // 許可されていない場合だけ追従をやめる。案内を出して操作してもらう。
+      if (err.code === err.PERMISSION_DENIED) {
+        setLocError('denied');
+        setWatching(false);
+        setFollowing(false);
+        return;
+      }
+      // iPhoneでは高精度の初回測位がタイムアウトしてから成功することが多い。
+      // そのため追従は止めず、まだ一度も取得できていないときだけ知らせる。
+      if (!gotFix) {
+        setLocError(err.code === err.TIMEOUT ? 'timeout' : 'unavailable');
+      }
+    };
+
+    // まず粗い位置を素早く取り、地図をすぐ動かす（iPhoneは高精度測位が遅いため）
+    navigator.geolocation.getCurrentPosition(apply, onError, {
+      enableHighAccuracy: false,
+      timeout: 10000,
+      maximumAge: 60000,
+    });
+
+    // 続けて高精度で追従する
+    watchIdRef.current = navigator.geolocation.watchPosition(apply, onError, {
+      enableHighAccuracy: true,
+      timeout: 30000,
+      maximumAge: 10000,
+    });
 
     return () => {
+      cancelled = true;
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
@@ -131,11 +163,11 @@ export default function GreenMap({ items, selectedItem, onSelectItem }) {
 
   // ボタン：停止中→追従開始／地図を動かした後→現在地に戻す／追従中→停止
   function handleLocate() {
-    if (!navigator.geolocation) { setLocError(true); return; }
+    if (!navigator.geolocation) { setLocError('unsupported'); return; }
     if (!watching) {
       setWatching(true);
       setFollowing(true);
-      setLocError(false);
+      setLocError(null);
     } else if (!following) {
       setFollowing(true);
     } else {
@@ -310,7 +342,38 @@ export default function GreenMap({ items, selectedItem, onSelectItem }) {
         </div>
       )}
       {locError && (
-        <div className="nearby-panel" style={{ color: '#e63946' }}>⚠️ 現在地を取得できませんでした</div>
+        <div className="locate-error">
+          <button className="locate-error-close" onClick={() => setLocError(null)} title="閉じる">✕</button>
+          {locError === 'denied' && (
+            <>
+              <div className="locate-error-title">位置情報が許可されていません</div>
+              <div className="locate-error-text">
+                iPhoneの場合：<br />
+                設定 → プライバシーとセキュリティ → 位置情報サービス → Safari Webサイト → 「このAppの使用中」を選んでから、
+                このページを開き直してください。
+              </div>
+            </>
+          )}
+          {locError === 'timeout' && (
+            <>
+              <div className="locate-error-title">現在地を探しています…</div>
+              <div className="locate-error-text">
+                建物の中では時間がかかることがあります。窓際や屋外に出ると取得しやすくなります。
+              </div>
+            </>
+          )}
+          {locError === 'unavailable' && (
+            <>
+              <div className="locate-error-title">現在地を取得できませんでした</div>
+              <div className="locate-error-text">
+                電波の届く場所で、もう一度 📍 を押してみてください。
+              </div>
+            </>
+          )}
+          {locError === 'unsupported' && (
+            <div className="locate-error-title">この端末では位置情報を利用できません</div>
+          )}
+        </div>
       )}
 
       <div className="map-legend">

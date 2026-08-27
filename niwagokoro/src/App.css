@@ -1098,6 +1098,35 @@ body {
 }
 .delete-confirm-btn:hover { background: #c92a38; }
 
+/* ── 位置情報のエラー案内 ── */
+.locate-error {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  max-width: 340px;
+  z-index: 1000;
+  background: #fff4e5;
+  border: 1px solid #f5c98a;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 0.7rem 2rem 0.7rem 0.85rem;
+}
+.locate-error-title { font-size: 0.82rem; font-weight: 700; color: #8a5200; margin-bottom: 0.3rem; }
+.locate-error-text { font-size: 0.75rem; color: #8a5200; line-height: 1.65; }
+.locate-error-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  border: none;
+  background: none;
+  color: #8a5200;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+}
+
 /* ── 公開待ちの表示 ── */
 .pending-badge {
   display: inline-block;
@@ -1207,6 +1236,7 @@ body {
   .fab { bottom: calc(70px + env(safe-area-inset-bottom)); }
   .locate-btn { bottom: calc(175px + env(safe-area-inset-bottom)); }
   .nearby-panel { bottom: calc(68px + env(safe-area-inset-bottom)); max-width: 180px; }
+  .locate-error { bottom: calc(68px + env(safe-area-inset-bottom)); }
 
   .add-form-box {
     width: 98vw;

@@ -72,7 +72,9 @@ export default function AddGreenForm({ onAdd, onClose }) {
         setMapCenter([lat, lng]);
       },
       () => {},
-      { enableHighAccuracy: true, timeout: 8000 }
+      // iPhoneは高精度測位が遅いので、粗い位置でよいから素早く返してもらう。
+      // 直前に取得した位置があればそれを使う。
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
     );
   }, []);
 
@@ -125,8 +127,9 @@ export default function AddGreenForm({ onAdd, onClose }) {
         applyLocation(pos.coords.latitude, pos.coords.longitude);
         setGpsStatus('success');
       },
-      () => setGpsStatus('error'),
-      { enableHighAccuracy: true, timeout: 10000 }
+      (err) => setGpsStatus(err.code === err.PERMISSION_DENIED ? 'denied' : 'error'),
+      // iPhoneでの取得失敗を減らすため、待ち時間を長めにしキャッシュも許容する
+      { enableHighAccuracy: true, timeout: 25000, maximumAge: 30000 }
     );
   }
 
@@ -203,6 +206,12 @@ export default function AddGreenForm({ onAdd, onClose }) {
             </button>
             {gpsStatus === 'success' && <div className="gps-success">✅ 現在地を取得しました</div>}
             {gpsStatus === 'error' && <div className="gps-error">⚠️ 取得できませんでした。地図をタップして指定してください。</div>}
+            {gpsStatus === 'denied' && (
+              <div className="gps-error">
+                ⚠️ 位置情報が許可されていません。iPhoneは「設定 → プライバシーとセキュリティ → 位置情報サービス → Safari Webサイト」で許可してください。
+                そのまま地図をタップして指定することもできます。
+              </div>
+            )}
           </div>
 
           {/* 住所（自動入力・修正可） */}
