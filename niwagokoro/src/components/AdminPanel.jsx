@@ -93,8 +93,13 @@ export default function AdminPanel({ items, onClose }) {
           </div>
         ) : (
           <>
+            {/* 端末ごとに別アカウントでログインしてしまうことがあるため、
+                どのアカウントか分かるようメールアドレスも出す */}
             <div className="admin-user">
-              <span>{user.displayName || user.email}</span>
+              <span className="admin-account">
+                {user.displayName && <strong>{user.displayName}</strong>}
+                {user.email && <span className="admin-email">{user.email}</span>}
+              </span>
               <button className="admin-logout" onClick={() => signOut(auth)}>ログアウト</button>
             </div>
 
