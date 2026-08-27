@@ -909,6 +909,30 @@ body {
   justify-content: center;
 }
 .locate-btn:hover { background: var(--green-50); }
+
+/* 地図／航空写真の切り替えボタン */
+.style-toggle {
+  position: absolute;
+  bottom: 174px;
+  right: 12px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  width: 44px;
+  padding: 5px 0;
+  border-radius: 10px;
+  border: none;
+  background: white;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  color: var(--text-sub);
+}
+.style-toggle:hover { background: var(--green-50); }
+.style-toggle.on-photo { background: var(--green-800); color: white; }
+.style-toggle-icon { font-size: 1.05rem; line-height: 1; }
+.style-toggle-label { font-size: 0.55rem; font-weight: 700; letter-spacing: 0.02em; }
 .locate-btn.watching { background: #e8f1fe; }
 .locate-btn.following { background: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.28), var(--shadow-md); }
 
@@ -1379,9 +1403,11 @@ body {
   .mobile-tab-btn.active { color: var(--green-700); }
 
   .fab { bottom: calc(70px + env(safe-area-inset-bottom)); }
-  .locate-btn { bottom: calc(175px + env(safe-area-inset-bottom)); }
+  .locate-btn { bottom: calc(135px + env(safe-area-inset-bottom)); }
+  .style-toggle { bottom: calc(188px + env(safe-area-inset-bottom)); }
   .nearby-panel { bottom: calc(68px + env(safe-area-inset-bottom)); max-width: 180px; }
   .locate-error { bottom: calc(68px + env(safe-area-inset-bottom)); }
+  .nearby-panel { bottom: calc(68px + env(safe-area-inset-bottom)); }
 
   /* 出典表示がタブバーに重ならないよう、その上に載せる */
   .map-container .leaflet-control-attribution {

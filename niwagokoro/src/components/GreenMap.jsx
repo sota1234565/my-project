@@ -17,6 +17,23 @@ const CONDITION_COLORS = {
 
 const NEARBY_RADIUS_M = 500;
 
+// 地図タイルは国土地理院のものを使う。日本国内は公式測量に基づくため精度が高い。
+// 利用にあたり出典の表示が必要（下の attribution）。
+const GSI_ATTRIBUTION =
+  '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">国土地理院</a>';
+const TILE_STYLES = {
+  pale: {
+    label: '航空写真',
+    icon: '🛰',
+    url: 'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png',
+  },
+  photo: {
+    label: '地図',
+    icon: '🗺',
+    url: 'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',
+  },
+};
+
 function getDistance(lat1, lng1, lat2, lng2) {
   const R = 6371000;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -109,6 +126,7 @@ export default function GreenMap({ items, selectedItem, onSelectItem }) {
   const [watching, setWatching] = useState(false);
   const [following, setFollowing] = useState(false);
   const [locError, setLocError] = useState(null); // null | 'denied' | 'timeout' | 'unavailable' | 'unsupported'
+  const [tileStyle, setTileStyle] = useState('pale'); // 'pale'（地図） | 'photo'（航空写真）
   const watchIdRef = useRef(null);
 
   // 位置の追従開始／停止
@@ -196,9 +214,12 @@ export default function GreenMap({ items, selectedItem, onSelectItem }) {
         {/* 地図データの出典表示。ライセンス上の義務なので消せないが、
             prefix={false} でライブラリの宣伝だけ省き、CSSで小さく目立たなくする。 */}
         <AttributionControl position="bottomright" prefix={false} />
+        {/* 地理院タイルはズーム18まで。それ以上は拡大表示して操作できるようにする */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          key={tileStyle}
+          attribution={GSI_ATTRIBUTION}
+          url={TILE_STYLES[tileStyle].url}
+          maxNativeZoom={18}
           maxZoom={19}
         />
 
@@ -314,6 +335,16 @@ export default function GreenMap({ items, selectedItem, onSelectItem }) {
           </div>
         </div>
       )}
+
+      {/* 地図と航空写真の切り替え */}
+      <button
+        className={`style-toggle ${tileStyle === 'photo' ? 'on-photo' : ''}`}
+        onClick={() => setTileStyle(s => (s === 'pale' ? 'photo' : 'pale'))}
+        title={`${TILE_STYLES[tileStyle].label}に切り替え`}
+      >
+        <span className="style-toggle-icon">{TILE_STYLES[tileStyle].icon}</span>
+        <span className="style-toggle-label">{TILE_STYLES[tileStyle].label}</span>
+      </button>
 
       {/* 現在地ボタン */}
       <button

@@ -1,6 +1,6 @@
 // 庭心 Service Worker
 // キャッシュ名のバージョンを上げると、古いキャッシュが破棄されて更新される
-const CACHE = 'niwagokoro-v2';
+const CACHE = 'niwagokoro-v3';
 const TILE_CACHE = 'niwagokoro-tiles-v1';
 const TILE_LIMIT = 800; // 保存する地図タイルの上限（おおよそ20〜40MB）
 const CORE = ['/', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png'];
@@ -54,8 +54,8 @@ self.addEventListener('fetch', (e) => {
 
   const url = new URL(req.url);
 
-  // OpenStreetMapの地図タイル
-  if (url.hostname.endsWith('tile.openstreetmap.org')) {
+  // 地図タイル（国土地理院・OpenStreetMap）
+  if (url.hostname === 'cyberjapandata.gsi.go.jp' || url.hostname.endsWith('tile.openstreetmap.org')) {
     e.respondWith(tileFirst(req));
     return;
   }
