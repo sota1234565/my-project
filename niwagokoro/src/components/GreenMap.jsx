@@ -4,6 +4,10 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { GREEN_TYPES } from '../data/greenItems';
+import { getLocationHelp } from '../platform';
+
+// 端末は途中で変わらないので、一度だけ判定する
+const LOCATION_HELP = getLocationHelp();
 
 const CONDITION_COLORS = {
   healthy: '#4ade80',
@@ -348,9 +352,12 @@ export default function GreenMap({ items, selectedItem, onSelectItem }) {
             <>
               <div className="locate-error-title">位置情報が許可されていません</div>
               <div className="locate-error-text">
-                iPhoneの場合：<br />
-                設定 → プライバシーとセキュリティ → 位置情報サービス → Safari Webサイト → 「このAppの使用中」を選んでから、
-                このページを開き直してください。
+                <ol className="locate-error-steps">
+                  {LOCATION_HELP.steps.map((step, i) => <li key={i}>{step}</li>)}
+                </ol>
+                {LOCATION_HELP.note && (
+                  <span className="locate-error-note">※{LOCATION_HELP.note}</span>
+                )}
               </div>
             </>
           )}

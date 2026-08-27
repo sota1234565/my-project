@@ -3,6 +3,9 @@ import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-lea
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { GREEN_TYPES } from '../data/greenItems';
+import { getLocationHelp } from '../platform';
+
+const LOCATION_HELP = getLocationHelp();
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -208,8 +211,11 @@ export default function AddGreenForm({ onAdd, onClose }) {
             {gpsStatus === 'error' && <div className="gps-error">⚠️ 取得できませんでした。地図をタップして指定してください。</div>}
             {gpsStatus === 'denied' && (
               <div className="gps-error">
-                ⚠️ 位置情報が許可されていません。iPhoneは「設定 → プライバシーとセキュリティ → 位置情報サービス → Safari Webサイト」で許可してください。
-                そのまま地図をタップして指定することもできます。
+                ⚠️ 位置情報が許可されていません。
+                <ol className="locate-error-steps">
+                  {LOCATION_HELP.steps.map((step, i) => <li key={i}>{step}</li>)}
+                </ol>
+                許可しなくても、地図をタップすれば場所を指定できます。
               </div>
             )}
           </div>
