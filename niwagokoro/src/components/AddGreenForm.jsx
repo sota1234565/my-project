@@ -7,6 +7,9 @@ import { getLocationHelp } from '../platform';
 
 const LOCATION_HELP = getLocationHelp();
 
+// 位置がまだ分からないときに表示する場所（藤沢市のあたり）
+const FUJISAWA_CENTER = [35.3386, 139.4875];
+
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -40,9 +43,22 @@ function LocationPicker({ onPick }) {
 
 function SetCenter({ center }) {
   const map = useMap();
+
+  // このフォームはモーダルの中にあり、開くアニメーションが終わるまで
+  // 地図の大きさが確定しない。Leafletに正しい大きさを教え直す。
   useEffect(() => {
-    if (center) map.setView(center, 16, { animate: true });
+    const t = setTimeout(() => map.invalidateSize(), 250);
+    return () => clearTimeout(t);
+  }, [map]);
+
+  useEffect(() => {
+    if (!center) return;
+    map.invalidateSize();
+    // animate: true だとモーダル内でアニメーションが中断され、地図が動かないことがある。
+    // 確実に移動させるため、アニメーションなしで切り替える。
+    map.setView(center, 16, { animate: false });
   }, [center, map]);
+
   return null;
 }
 
@@ -62,7 +78,8 @@ export default function AddGreenForm({ onAdd, onClose }) {
   const [gpsStatus, setGpsStatus] = useState('idle');
   const [addressLoading, setAddressLoading] = useState(false);
   const [pinPos, setPinPos] = useState(null);
-  const [mapCenter, setMapCenter] = useState([35.3386, 139.4875]);
+  // nullのあいだは地図を動かさない（開いた直後は藤沢市全体が見える状態を保つ）
+  const [mapCenter, setMapCenter] = useState(null);
   const [photo, setPhoto] = useState(null);
 
   // フォームを開いたとき自動で現在地を取得してマップ中心に
@@ -113,8 +130,11 @@ export default function AddGreenForm({ onAdd, onClose }) {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
-  const applyLocation = useCallback(async (lat, lng) => {
+  // recenter: 地図の表示位置も動かすか。
+  // GPS取得のときだけ動かす。地図タップのたびに動くと操作しづらいため。
+  const applyLocation = useCallback(async (lat, lng, recenter = false) => {
     setPinPos([lat, lng]);
+    if (recenter) setMapCenter([lat, lng]);
     setForm(prev => ({ ...prev, lat: lat.toFixed(6), lng: lng.toFixed(6) }));
     setAddressLoading(true);
     const address = await reverseGeocode(lat, lng);
@@ -127,7 +147,7 @@ export default function AddGreenForm({ onAdd, onClose }) {
     setGpsStatus('loading');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        applyLocation(pos.coords.latitude, pos.coords.longitude);
+        applyLocation(pos.coords.latitude, pos.coords.longitude, true);
         setGpsStatus('success');
       },
       (err) => setGpsStatus(err.code === err.PERMISSION_DENIED ? 'denied' : 'error'),
@@ -185,7 +205,7 @@ export default function AddGreenForm({ onAdd, onClose }) {
             <label className="form-label">📍 地図をタップして場所を指定</label>
             <div className="location-map-wrap">
               <MapContainer
-                center={pinPos || mapCenter}
+                center={pinPos || mapCenter || FUJISAWA_CENTER}
                 zoom={14}
                 style={{ width: '100%', height: '320px' }}
                 zoomControl={true}
