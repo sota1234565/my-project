@@ -3,6 +3,7 @@
 // 安全は Realtime Database のセキュリティルールで守っている。
 import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBgwAxyVOgqG0e2gmMmacVZv8hVsbBUHz8',
@@ -16,3 +17,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
+
+// 管理者（承認する人）のログインに使う。
+// 「誰が承認できるか」はデータベース側のルールで決めているため、
+// ここを突破されても他人が承認できるようにはならない。
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();

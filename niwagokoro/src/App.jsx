@@ -5,6 +5,7 @@ import GreenMap from './components/GreenMap';
 import DetailPanel from './components/DetailPanel';
 import RankingPanel from './components/RankingPanel';
 import AddGreenForm from './components/AddGreenForm';
+import AdminPanel from './components/AdminPanel';
 import { GREEN_TYPES, CURRENT_USER } from './data/greenItems';
 import { db } from './firebase';
 import { getDeviceId } from './deviceId';
@@ -47,6 +48,10 @@ export default function App() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [mobileTab, setMobileTab] = useState('map'); // 'map' | 'list' | 'ranking'
+  // 管理画面は ?admin 付きのURLでのみ開く（一般の利用者には見えない）
+  const [showAdmin, setShowAdmin] = useState(
+    () => new URLSearchParams(window.location.search).has('admin')
+  );
 
   // 共有データベースを購読（誰かが登録・承認すると自動で反映される）
   useEffect(() => {
@@ -338,6 +343,13 @@ export default function App() {
         <AddGreenForm
           onAdd={handleAddGreen}
           onClose={() => setShowAddForm(false)}
+        />
+      )}
+
+      {showAdmin && (
+        <AdminPanel
+          items={allItems}
+          onClose={() => setShowAdmin(false)}
         />
       )}
     </div>
