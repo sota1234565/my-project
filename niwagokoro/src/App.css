@@ -60,6 +60,11 @@ body {
   font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: 0.06em;
+  /* 管理画面を開くために連続タップするので、文字選択と拡大を抑える */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .header-logo span.emoji { font-size: 1.4rem; }

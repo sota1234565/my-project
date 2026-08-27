@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ref, onValue, push, set } from 'firebase/database';
 import './App.css';
 import GreenMap from './components/GreenMap';
@@ -48,10 +48,26 @@ export default function App() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [mobileTab, setMobileTab] = useState('map'); // 'map' | 'list' | 'ranking'
-  // 管理画面は ?admin 付きのURLでのみ開く（一般の利用者には見えない）
+  // 管理画面は ?admin 付きURL、またはロゴの5回連続タップで開く。
+  // 一般の利用者には入口が見えないが、安全を守っているのはこの隠し方ではなく
+  // データベース側のルール（管理者のIDだけが承認・削除できる）である。
   const [showAdmin, setShowAdmin] = useState(
     () => new URLSearchParams(window.location.search).has('admin')
   );
+  const logoTapRef = useRef({ count: 0, timer: null });
+
+  function handleLogoTap() {
+    const s = logoTapRef.current;
+    clearTimeout(s.timer);
+    s.count += 1;
+    if (s.count >= 5) {
+      s.count = 0;
+      setShowAdmin(true);
+      return;
+    }
+    // 間が空いたら数え直す
+    s.timer = setTimeout(() => { s.count = 0; }, 1500);
+  }
 
   // 共有データベースを購読（誰かが登録・承認すると自動で反映される）
   useEffect(() => {
@@ -168,7 +184,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="header">
-        <div className="header-logo">
+        <div className="header-logo" onClick={handleLogoTap}>
           <span className="emoji">🌿</span>
           庭心
         </div>
