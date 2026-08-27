@@ -1145,6 +1145,18 @@ body {
   margin-bottom: 1rem;
 }
 
+/* ── 地図の出典表示 ──
+   ライセンス上、消すことはできない。読める状態を保ちつつ、
+   小さく・薄くして操作の邪魔にならないようにする。 */
+.leaflet-control-attribution {
+  font-size: 9px !important;
+  background: rgba(255,255,255,0.65) !important;
+  padding: 0 4px !important;
+  color: #666 !important;
+  border-radius: 4px 0 0 0;
+}
+.leaflet-control-attribution a { color: #567; }
+
 /* ── 管理画面 ── */
 .admin-overlay {
   position: fixed;
@@ -1370,6 +1382,11 @@ body {
   .locate-btn { bottom: calc(175px + env(safe-area-inset-bottom)); }
   .nearby-panel { bottom: calc(68px + env(safe-area-inset-bottom)); max-width: 180px; }
   .locate-error { bottom: calc(68px + env(safe-area-inset-bottom)); }
+
+  /* 出典表示がタブバーに重ならないよう、その上に載せる */
+  .map-container .leaflet-control-attribution {
+    margin-bottom: calc(56px + env(safe-area-inset-bottom)) !important;
+  }
 
   .add-form-box {
     width: 98vw;

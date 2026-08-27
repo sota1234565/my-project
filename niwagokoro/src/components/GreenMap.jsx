@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Circle, CircleMarker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Circle, CircleMarker, AttributionControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -191,9 +191,13 @@ export default function GreenMap({ items, selectedItem, onSelectItem }) {
         zoom={13}
         style={{ width: '100%', height: '100%' }}
         zoomControl={false}
+        attributionControl={false}
       >
+        {/* 地図データの出典表示。ライセンス上の義務なので消せないが、
+            prefix={false} でライブラリの宣伝だけ省き、CSSで小さく目立たなくする。 */}
+        <AttributionControl position="bottomright" prefix={false} />
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={19}
         />

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents, AttributionControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { GREEN_TYPES } from '../data/greenItems';
@@ -198,10 +198,12 @@ export default function AddGreenForm({ onAdd, onClose }) {
                 zoom={14}
                 style={{ width: '100%', height: '320px' }}
                 zoomControl={true}
+                attributionControl={false}
               >
+                <AttributionControl position="bottomright" prefix={false} />
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; OpenStreetMap contributors'
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 />
                 <SetCenter center={mapCenter} />
                 <LocationPicker onPick={applyLocation} />
