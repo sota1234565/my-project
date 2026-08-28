@@ -187,10 +187,10 @@ export default function App() {
   return (
     <div className="app">
       <header className="header">
-        <div className="header-logo" onClick={handleLogoTap}>
+        <h1 className="header-logo" onClick={handleLogoTap}>
           <span className="emoji">🌿</span>
           庭心
-        </div>
+        </h1>
         <nav className="header-nav">
           {Object.entries(VIEWS).map(([key, label]) => (
             <button
@@ -330,6 +330,32 @@ export default function App() {
                     </div>
                   );
                 })}
+
+                {/* アプリの説明。初めて訪れた人への案内であり、
+                    検索エンジンがページの内容を判断する材料にもなる。 */}
+                <section className="about-section">
+                  <h2 className="about-title">庭心（にわしん）について</h2>
+                  <p className="about-text">
+                    庭心は、神奈川県藤沢市の木・花・雨庭を、まちに暮らす人が写真と地図で記録し、
+                    みんなで見守るためのアプリです。
+                  </p>
+                  <p className="about-text">
+                    散歩の途中で気になった木や花を見つけたら、写真を撮って地図をタップするだけで登録できます。
+                    住所は自動で入り、写真から植物の名前を調べることもできます。
+                  </p>
+                  <p className="about-text">
+                    登録された緑地は地図上に並び、近くを通りかかった人が見られるようになります。
+                    ふだん見過ごしている街路樹や小さな花壇に目を向けるきっかけになればと思って作りました。
+                  </p>
+                  <h2 className="about-title">できること</h2>
+                  <ul className="about-list">
+                    <li>木・花・雨庭を写真つきで地図に登録する</li>
+                    <li>写真から植物の名前の候補を調べる</li>
+                    <li>現在地を表示して、近くの緑地を探す</li>
+                    <li>気に入った緑地を「推し」として記録する</li>
+                    <li>観察したことを記録して残す</li>
+                  </ul>
+                </section>
               </div>
             </>
           )}

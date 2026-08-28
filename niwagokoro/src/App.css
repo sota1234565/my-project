@@ -60,6 +60,7 @@ body {
   font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: 0.06em;
+  margin: 0; /* h1 の既定の余白を打ち消す */
   /* 管理画面を開くために連続タップするので、文字選択と拡大を抑える */
   -webkit-user-select: none;
   user-select: none;
@@ -1073,6 +1074,35 @@ body {
 .nearby-name { flex: 1; }
 .nearby-dist { font-size: 0.72rem; color: var(--text-muted); }
 .nearby-badge { font-size: 0.7rem; color: #3b82f6; }
+
+/* ── アプリの説明 ── */
+.about-section {
+  margin-top: 1.5rem;
+  padding: 1rem 1.1rem 1.2rem;
+  border-top: 1px solid var(--border);
+  background: var(--green-50);
+  border-radius: var(--radius);
+}
+.about-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--green-700);
+  margin: 0 0 0.5rem;
+}
+.about-title:not(:first-child) { margin-top: 1rem; }
+.about-text {
+  font-size: 0.78rem;
+  color: var(--text-sub);
+  line-height: 1.85;
+  margin: 0 0 0.6rem;
+}
+.about-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.78rem;
+  color: var(--text-sub);
+  line-height: 1.9;
+}
 
 /* ── 空の状態 ── */
 .empty-state {
