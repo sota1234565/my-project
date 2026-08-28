@@ -3,8 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>庭心 - まちの緑を見守るアプリ</title>
-    <meta name="description" content="藤沢市の木・花・雨庭を市民で記録し、見守るためのアプリ。" />
+
+    <title>庭心（にわごころ）｜藤沢市のまちの緑を記録して見守るアプリ</title>
+    <meta name="description" content="庭心（にわごころ）は、神奈川県藤沢市の木・花・雨庭を地域の人が写真と地図で記録し、みんなで見守るためのウェブアプリです。写真から植物の名前を調べる機能もあります。" />
+    <link rel="canonical" href="https://my-project-psi-bay-76.vercel.app/" />
+
+    <!-- 検索エンジンへの案内 -->
+    <meta name="robots" content="index, follow" />
+
+    <!-- SNSで共有されたときの見え方 -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="庭心" />
+    <meta property="og:title" content="庭心（にわごころ）｜藤沢市のまちの緑を記録して見守るアプリ" />
+    <meta property="og:description" content="藤沢市の木・花・雨庭を、地域の人が写真と地図で記録して見守るアプリです。" />
+    <meta property="og:url" content="https://my-project-psi-bay-76.vercel.app/" />
+    <meta property="og:image" content="https://my-project-psi-bay-76.vercel.app/icon-512.png" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta name="twitter:card" content="summary" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
@@ -18,9 +33,29 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="庭心" />
+
+    <style>
+      /* 読み込み中の表示。アプリが起動すると置き換わる */
+      #boot { padding: 2.5rem 1.5rem; text-align: center; font-family: system-ui, sans-serif; color: #2d6a4f; }
+      #boot h1 { font-size: 1.4rem; margin: 0 0 .6rem; }
+      #boot p { font-size: .9rem; color: #5a7060; line-height: 1.8; margin: 0 auto; max-width: 34em; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <!--
+      この中身は、アプリが起動すると消えて画面に置き換わる。
+      検索エンジンが JavaScript を実行しない場合でも、
+      何のサイトか読み取れるようにするために置いている。
+    -->
+    <div id="root">
+      <div id="boot">
+        <h1>🌿 庭心（にわごころ）</h1>
+        <p>
+          神奈川県藤沢市の木・花・雨庭を、地域の人が写真と地図で記録し、みんなで見守るためのアプリです。
+          近所の木を登録したり、写真から植物の名前を調べたりできます。
+        </p>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

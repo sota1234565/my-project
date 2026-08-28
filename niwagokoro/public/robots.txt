@@ -1,0 +1,5 @@
+# 検索エンジンのクローラーへの案内
+User-agent: *
+Allow: /
+
+Sitemap: https://my-project-psi-bay-76.vercel.app/sitemap.xml
