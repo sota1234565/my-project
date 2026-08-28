@@ -891,6 +891,87 @@ body {
 .photo-preview { width: 100%; max-height: 200px; object-fit: cover; display: block; }
 .detail-photo { width: 100%; max-height: 240px; object-fit: cover; border-radius: var(--radius); margin-bottom: 1rem; }
 
+/* ── 写真から名前を調べる ── */
+.identify-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: #f3ecfd;
+  color: #6b3fa0;
+  border: 1.5px solid #c9aeea;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.identify-btn:hover:not(:disabled) { background: #e9dcfa; }
+.identify-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+
+.candidates { margin-top: 0.6rem; }
+.candidates-hint {
+  font-size: 0.75rem;
+  color: var(--text-sub);
+  margin-bottom: 0.4rem;
+  text-align: center;
+}
+.candidate {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 0.4rem;
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: var(--transition);
+}
+.candidate:hover { border-color: var(--green-500); background: var(--green-50); }
+.candidate-photo {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.candidate-nophoto {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg); color: var(--text-muted); font-size: 0.6rem;
+}
+.candidate-body { flex: 1; min-width: 0; }
+.candidate-name { font-size: 0.9rem; font-weight: 700; color: var(--text-main); }
+.candidate-sci { font-size: 0.7rem; color: var(--text-muted); font-style: italic; word-break: break-word; }
+.candidate-score {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--green-700);
+  flex-shrink: 0;
+}
+.candidate-none {
+  width: 100%;
+  padding: 0.5rem;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: var(--text-sub);
+  cursor: pointer;
+}
+.candidate-none:hover { background: var(--bg); }
+.identify-error {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  background: #fff4e5;
+  border: 1px solid #f5c98a;
+  border-radius: var(--radius-sm);
+  font-size: 0.76rem;
+  color: #8a5200;
+  line-height: 1.55;
+}
+
 .locate-btn {
   position: absolute;
   bottom: 120px;

@@ -157,6 +157,9 @@ export default function App() {
       location: data.location,
       description: data.description ?? '',
       photo: data.photo ?? null,
+      scientificName: data.scientificName ?? null,
+      // 名前が写真判定によるものかどうか。推定を事実と混同しないための記録。
+      aiIdentified: data.aiIdentified ?? false,
       condition: 'healthy',
       authorId: deviceId,
       status: 'pending',

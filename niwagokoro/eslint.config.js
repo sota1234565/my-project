@@ -26,4 +26,11 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  {
+    // api/ はブラウザではなくサーバー（Node.js）で動くため、使えるものが違う
+    files: ['api/**/*.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])

@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# APIキーなどの秘密情報（絶対にGitHubに上げない）
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

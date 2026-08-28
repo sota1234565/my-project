@@ -72,6 +72,8 @@ export default function AddGreenForm({ onAdd, onClose }) {
     lat: '',
     lng: '',
     description: '',
+    // 写真判定で得られた学名。入力欄は設けず、裏側で記録だけしておく。
+    scientificName: '',
   });
   const [gpsStatus, setGpsStatus] = useState('idle');
   const [addressLoading, setAddressLoading] = useState(false);
@@ -79,6 +81,49 @@ export default function AddGreenForm({ onAdd, onClose }) {
   // nullのあいだは地図を動かさない（開いた直後は藤沢市全体が見える状態を保つ）
   const [mapCenter, setMapCenter] = useState(null);
   const [photo, setPhoto] = useState(null);
+  // 写真からの名前判定（候補を出すだけで、確定はしない）
+  const [identifying, setIdentifying] = useState(false);
+  const [candidates, setCandidates] = useState(null);
+  const [identifyError, setIdentifyError] = useState(null);
+  const [pickedFromAI, setPickedFromAI] = useState(false);
+
+  // 候補の表示名。日本語の名前があればそれを、無ければ学名を使う。
+  function candidateLabel(c) {
+    return (c.commonNames && c.commonNames[0]) || c.scientificName || '名前不明';
+  }
+
+  async function handleIdentify() {
+    if (!photo) return;
+    setIdentifying(true);
+    setIdentifyError(null);
+    setCandidates(null);
+    try {
+      const res = await fetch('/api/identify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: photo }),
+      });
+      const data = await res.json();
+      if (data.error || !data.results?.length) {
+        setIdentifyError(data.error || 'no_match');
+      } else {
+        setCandidates(data.results);
+      }
+    } catch {
+      setIdentifyError('failed');
+    }
+    setIdentifying(false);
+  }
+
+  function pickCandidate(c) {
+    setForm(prev => ({
+      ...prev,
+      name: candidateLabel(c),
+      scientificName: c.scientificName || '',
+    }));
+    setPickedFromAI(true);
+    setCandidates(null);
+  }
 
   // フォームを開いたとき自動で現在地を取得してマップ中心に
   useEffect(() => {
@@ -122,6 +167,9 @@ export default function AddGreenForm({ onAdd, onClose }) {
       img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
+    // 写真を変えたら、前の判定結果は捨てる
+    setCandidates(null);
+    setIdentifyError(null);
   }
 
   function handleChange(e) {
@@ -167,6 +215,9 @@ export default function AddGreenForm({ onAdd, onClose }) {
       },
       description: form.description.trim(),
       photo: photo || null,
+      scientificName: form.scientificName.trim() || null,
+      // 名前を写真判定から選んだかどうか（推定であることを記録に残す）
+      aiIdentified: pickedFromAI,
     });
   }
 
@@ -259,6 +310,64 @@ export default function AddGreenForm({ onAdd, onClose }) {
               )}
               <input type="file" accept="image/*" capture="environment" onChange={handlePhoto} style={{ display: 'none' }} />
             </label>
+
+            {/* 写真から名前の候補を調べる。選ぶのは利用者。 */}
+            {photo && (
+              <>
+                <button
+                  type="button"
+                  className="identify-btn"
+                  onClick={handleIdentify}
+                  disabled={identifying}
+                >
+                  {identifying ? '🔍 調べています…' : '🔍 この木の名前を調べる'}
+                </button>
+
+                {candidates && (
+                  <div className="candidates">
+                    <div className="candidates-hint">
+                      撮った写真と見比べて、近いものを選んでください
+                    </div>
+                    {candidates.map((c, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className="candidate"
+                        onClick={() => pickCandidate(c)}
+                      >
+                        {c.image
+                          ? <img src={c.image} alt="" className="candidate-photo" />
+                          : <div className="candidate-photo candidate-nophoto">写真なし</div>}
+                        <div className="candidate-body">
+                          <div className="candidate-name">{candidateLabel(c)}</div>
+                          {c.scientificName && (
+                            <div className="candidate-sci">{c.scientificName}</div>
+                          )}
+                        </div>
+                        <div className="candidate-score">{Math.round(c.score * 100)}%</div>
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      className="candidate-none"
+                      onClick={() => setCandidates(null)}
+                    >
+                      どれでもない（自分で入力する）
+                    </button>
+                  </div>
+                )}
+
+                {identifyError && (
+                  <div className="identify-error">
+                    {identifyError === 'no_match' && '似た植物が見つかりませんでした。葉や花に近づいて撮ると精度が上がります。'}
+                    {identifyError === 'quota_exceeded' && '本日の判定回数の上限に達しました。明日また試してください。'}
+                    {identifyError === 'not_configured' && 'この機能はまだ準備中です。名前は手で入力してください。'}
+                    {identifyError === 'bad_key' && '判定サービスに接続できませんでした。名前は手で入力してください。'}
+                    {identifyError === 'failed' && 'うまく調べられませんでした。通信環境を確認するか、名前を手で入力してください。'}
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           <div className="form-group">
