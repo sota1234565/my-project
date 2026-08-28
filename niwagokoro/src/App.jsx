@@ -6,6 +6,7 @@ import DetailPanel from './components/DetailPanel';
 import RankingPanel from './components/RankingPanel';
 import AddGreenForm from './components/AddGreenForm';
 import AdminPanel from './components/AdminPanel';
+import LeafMark from './components/LeafMark';
 import { GREEN_TYPES, CURRENT_USER } from './data/greenItems';
 import { db } from './firebase';
 import { getDeviceId } from './deviceId';
@@ -188,7 +189,7 @@ export default function App() {
     <div className="app">
       <header className="header">
         <h1 className="header-logo" onClick={handleLogoTap}>
-          <span className="emoji">🌿</span>
+          <LeafMark size={26} />
           庭心
         </h1>
         <nav className="header-nav">

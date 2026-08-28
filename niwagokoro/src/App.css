@@ -69,6 +69,8 @@ body {
 }
 
 .header-logo span.emoji { font-size: 1.4rem; }
+/* ヘッダーは濃い緑なので、葉は白く抜く */
+.header-logo .leaf-mark { color: #ffffff; flex-shrink: 0; }
 
 .header-nav { display: flex; gap: 0.25rem; }
 
