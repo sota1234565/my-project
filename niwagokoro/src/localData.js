@@ -39,3 +39,11 @@ export const loadSupports = () => loadObj(SUPPORTS);
 export const saveSupports = (o) => saveObj(SUPPORTS, o);
 export const loadMyObs = () => loadObj(MYOBS);
 export const saveMyObs = (o) => saveObj(MYOBS, o);
+
+// この端末のローカル記録（ポイント・推し・観察）をすべて消す。
+// 共有データ（Firebase上の緑地）には一切触れない。テストデータの掃除用。
+export function clearLocalData() {
+  for (const key of [POINTS, SUPPORTS, MYOBS]) {
+    try { localStorage.removeItem(key); } catch { /* ignore */ }
+  }
+}

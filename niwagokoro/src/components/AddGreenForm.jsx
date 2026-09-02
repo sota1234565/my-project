@@ -299,22 +299,37 @@ export default function AddGreenForm({ onAdd, onClose }) {
             />
           </div>
 
-          {/* 写真アップロード */}
+          {/* 写真アップロード：撮影とフォルダ選択を別ボタンにする */}
           <div className="form-group">
             <label className="form-label">📷 写真（任意）</label>
-            <label className="photo-upload-label">
-              {photo ? (
-                <img src={photo} alt="プレビュー" className="photo-preview" />
-              ) : (
-                <div className="photo-placeholder">
-                  タップして写真を選択
-                  <span className="photo-placeholder-sub">その場で撮影／保存済みの写真から選ぶ</span>
-                </div>
-              )}
-              {/* capture属性を付けないことで、
-                  「撮影」と「ライブラリから選択」の両方をOSの選択画面に出す */}
-              <input type="file" accept="image/*" onChange={handlePhoto} style={{ display: 'none' }} />
-            </label>
+
+            {photo && (
+              <img src={photo} alt="プレビュー" className="photo-preview-standalone" />
+            )}
+
+            <div className="photo-btn-row">
+              {/* その場で撮影：capture付きでカメラを直接開く */}
+              <label className="photo-btn">
+                📷 写真を撮る
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handlePhoto}
+                  style={{ display: 'none' }}
+                />
+              </label>
+              {/* フォルダから選ぶ：capture無しで写真ライブラリ／ファイルを開く */}
+              <label className="photo-btn">
+                🖼 フォルダから選ぶ
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhoto}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
 
             {/* 写真から名前の候補を調べる。選ぶのは利用者。 */}
             {photo && (

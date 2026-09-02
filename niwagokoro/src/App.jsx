@@ -14,6 +14,7 @@ import {
   loadPoints, savePoints,
   loadSupports, saveSupports,
   loadMyObs, saveMyObs,
+  clearLocalData,
 } from './localData';
 
 const VIEWS = { map: '地図', ranking: 'ランキング' };
@@ -26,6 +27,14 @@ const FILTERS = [
 ];
 
 const CONDITION_LABELS = { healthy: '健全', needs_care: '要ケア', poor: '不良' };
+
+// ?reset 付きURLで開いたら、この端末のローカル記録（ポイント・推し・観察）を
+// 消してから通常URLに戻す。テストデータを初期状態に戻すための入口。
+// 共有データ（Firebase上の緑地）には触れない。
+if (new URLSearchParams(window.location.search).has('reset')) {
+  clearLocalData();
+  window.location.replace(window.location.pathname);
+}
 
 const deviceId = getDeviceId();
 const MY_ID = CURRENT_USER.id;
