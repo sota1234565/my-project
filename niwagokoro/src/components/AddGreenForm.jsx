@@ -306,9 +306,14 @@ export default function AddGreenForm({ onAdd, onClose }) {
               {photo ? (
                 <img src={photo} alt="プレビュー" className="photo-preview" />
               ) : (
-                <div className="photo-placeholder">タップして写真を選択</div>
+                <div className="photo-placeholder">
+                  タップして写真を選択
+                  <span className="photo-placeholder-sub">その場で撮影／保存済みの写真から選ぶ</span>
+                </div>
               )}
-              <input type="file" accept="image/*" capture="environment" onChange={handlePhoto} style={{ display: 'none' }} />
+              {/* capture属性を付けないことで、
+                  「撮影」と「ライブラリから選択」の両方をOSの選択画面に出す */}
+              <input type="file" accept="image/*" onChange={handlePhoto} style={{ display: 'none' }} />
             </label>
 
             {/* 写真から名前の候補を調べる。選ぶのは利用者。 */}
