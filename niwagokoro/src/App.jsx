@@ -102,6 +102,9 @@ export default function App() {
       ...it,
       condition: it.condition || 'healthy',
       tags: it.tags || [],
+      // 写真は複数対応。古いデータ（photo単数）も配列に揃える。photo は表示用の「顔」。
+      photos: Array.isArray(it.photos) ? it.photos : (it.photo ? [it.photo] : []),
+      photo: it.photo || (Array.isArray(it.photos) ? it.photos[0] : null) || null,
       supporters: supports[it.id] ? [MY_ID] : [],
       observations: myObs[it.id] || [],
       isMinePending: it.status !== 'approved' && it.authorId === deviceId,
@@ -166,7 +169,8 @@ export default function App() {
       name: data.name,
       location: data.location,
       description: data.description ?? '',
-      photo: data.photo ?? null,
+      photo: data.photo ?? (data.photos?.[0] ?? null), // 表示用の「顔」
+      photos: data.photos ?? (data.photo ? [data.photo] : []), // 全部（詳細ギャラリー用）
       scientificName: data.scientificName ?? null,
       // 名前が写真判定によるものかどうか。推定を事実と混同しないための記録。
       aiIdentified: data.aiIdentified ?? false,

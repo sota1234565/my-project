@@ -60,18 +60,22 @@ export default async function handler(req, res) {
     if (typeof body === 'string') {
       try { body = JSON.parse(body); } catch { body = {}; }
     }
-    const image = body?.image;
-    if (!image || typeof image !== 'string') {
+    // 画像は複数受け取れる。images配列（新）と image単数（旧）の両対応。
+    // Pl@ntNetは複数枚まとめて送るほど精度が上がる（最大5枚）。
+    let images = Array.isArray(body?.images) ? body.images : (body?.image ? [body.image] : []);
+    images = images.filter((s) => typeof s === 'string' && s).slice(0, 5);
+    if (!images.length) {
       res.status(400).json({ error: 'no_image', results: [] });
       return;
     }
 
-    const base64 = image.includes(',') ? image.split(',')[1] : image;
-    const bytes = Buffer.from(base64, 'base64');
-
     const form = new FormData();
-    form.append('images', new Blob([bytes], { type: 'image/jpeg' }), 'photo.jpg');
-    form.append('organs', 'auto');
+    for (const img of images) {
+      const base64 = img.includes(',') ? img.split(',')[1] : img;
+      const bytes = Buffer.from(base64, 'base64');
+      form.append('images', new Blob([bytes], { type: 'image/jpeg' }), 'photo.jpg');
+      form.append('organs', 'auto'); // 画像1枚につき organ を1つ添える
+    }
 
     const url = `${PLANTNET_ENDPOINT}?api-key=${encodeURIComponent(apiKey)}`
       + `&include-related-images=true&nb-results=${MAX_RESULTS}&lang=ja`;

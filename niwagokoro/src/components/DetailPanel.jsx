@@ -57,6 +57,13 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
         {item.photo && (
           <img src={item.photo} alt={item.name} className="detail-photo" />
         )}
+        {Array.isArray(item.photos) && item.photos.length > 1 && (
+          <div className="detail-photo-gallery">
+            {item.photos.slice(1).map((src, i) => (
+              <img key={i} src={src} alt="" className="detail-photo-thumb" />
+            ))}
+          </div>
+        )}
 
         {/* 説明 */}
         {item.description && (

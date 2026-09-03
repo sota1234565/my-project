@@ -10,6 +10,9 @@ const LOCATION_HELP = getLocationHelp();
 // 位置がまだ分からないときに表示する場所（藤沢市のあたり）
 const FUJISAWA_CENTER = [35.3386, 139.4875];
 
+// 1本の木に登録できる写真の上限（1枚目=全体、以降=アップ）
+const MAX_PHOTOS = 4;
+
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -80,7 +83,9 @@ export default function AddGreenForm({ onAdd, onClose }) {
   const [pinPos, setPinPos] = useState(null);
   // nullのあいだは地図を動かさない（開いた直後は藤沢市全体が見える状態を保つ）
   const [mapCenter, setMapCenter] = useState(null);
-  const [photo, setPhoto] = useState(null);
+  // 写真は複数持てる。photos[0] が全体写真（地図・詳細で表示される「顔」）、
+  // 以降は葉や花のアップ（名前判定の精度を上げるため）。
+  const [photos, setPhotos] = useState([]);
   // 写真からの名前判定（候補を出すだけで、確定はしない）
   const [identifying, setIdentifying] = useState(false);
   const [candidates, setCandidates] = useState(null);
@@ -94,7 +99,7 @@ export default function AddGreenForm({ onAdd, onClose }) {
   }
 
   async function handleIdentify() {
-    if (!photo) return;
+    if (!photos.length) return;
     setIdentifying(true);
     setIdentifyError(null);
     setCandidates(null);
@@ -102,7 +107,7 @@ export default function AddGreenForm({ onAdd, onClose }) {
       const res = await fetch('/api/identify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: photo }),
+        body: JSON.stringify({ images: photos }),
       });
       const data = await res.json();
       if (data.error || !data.results?.length) {
@@ -144,31 +149,44 @@ export default function AddGreenForm({ onAdd, onClose }) {
 
   // 写真は共有データベースに載せるため、縮小・圧縮してから使う。
   // 長辺1000pxまで縮め、JPEG品質0.6に。これで数十KB程度に収まる。
-  function handlePhoto(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const img = new Image();
-      img.onload = () => {
-        const MAX = 1000;
-        let { width, height } = img;
-        if (width > MAX || height > MAX) {
-          const scale = MAX / Math.max(width, height);
-          width = Math.round(width * scale);
-          height = Math.round(height * scale);
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        setPhoto(canvas.toDataURL('image/jpeg', 0.6));
+  function fileToCompressed(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 1000;
+          let { width, height } = img;
+          if (width > MAX || height > MAX) {
+            const scale = MAX / Math.max(width, height);
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.6));
+        };
+        img.onerror = () => resolve(ev.target.result);
+        img.src = ev.target.result;
       };
-      img.onerror = () => setPhoto(ev.target.result); // 変換失敗時は元画像
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
-    // 写真を変えたら、前の判定結果は捨てる
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleAddPhoto(e) {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const dataUrl = await fileToCompressed(file);
+    setPhotos((prev) => (prev.length >= MAX_PHOTOS ? prev : [...prev, dataUrl]));
+    setCandidates(null);
+    setIdentifyError(null);
+  }
+
+  function removePhoto(idx) {
+    setPhotos((prev) => prev.filter((_, i) => i !== idx));
     setCandidates(null);
     setIdentifyError(null);
   }
@@ -215,7 +233,8 @@ export default function AddGreenForm({ onAdd, onClose }) {
         address: form.address.trim() || '藤沢市',
       },
       description: form.description.trim(),
-      photo: photo || null,
+      photo: photos[0] || null,
+      photos,
       scientificName: form.scientificName.trim() || null,
       // 名前を写真判定から選んだかどうか（推定であることを記録に残す）
       aiIdentified: pickedFromAI,
@@ -300,40 +319,47 @@ export default function AddGreenForm({ onAdd, onClose }) {
             />
           </div>
 
-          {/* 写真アップロード：撮影とフォルダ選択を別ボタンにする */}
+          {/* 写真：全体写真＋アップ写真を複数登録できる */}
           <div className="form-group">
             <label className="form-label">📷 写真（任意）</label>
 
-            {photo && (
-              <img src={photo} alt="プレビュー" className="photo-preview-standalone" />
-            )}
-
-            <div className="photo-btn-row">
-              {/* その場で撮影：capture付きでカメラを直接開く */}
-              <label className="photo-btn">
-                📷 写真を撮る
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handlePhoto}
-                  style={{ display: 'none' }}
-                />
-              </label>
-              {/* フォルダから選ぶ：capture無しで写真ライブラリ／ファイルを開く */}
-              <label className="photo-btn">
-                🖼 フォルダから選ぶ
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhoto}
-                  style={{ display: 'none' }}
-                />
-              </label>
+            {/* 仕組みの説明。ここが伝わらないと「撮っても名前が出ない」で困る */}
+            <div className="photo-guide">
+              <div>📸 <strong>1枚目は木の「全体」</strong>を撮ってください。地図で見た人に、木の姿や場所が伝わります。</div>
+              <div>🔍 <strong>名前を調べたいときは、葉や花に近づいた「アップ」も足して</strong>ください。全体写真だけでは名前は判別できません。</div>
             </div>
 
-            {/* 写真から名前の候補を調べる。選ぶのは利用者。 */}
-            {photo && (
+            {photos.length > 0 && (
+              <div className="photo-thumbs">
+                {photos.map((src, i) => (
+                  <div key={i} className="photo-thumb">
+                    <img src={src} alt="" />
+                    <span className="photo-thumb-tag">{i === 0 ? '全体' : 'アップ'}</span>
+                    <button
+                      type="button"
+                      className="photo-thumb-remove"
+                      onClick={() => removePhoto(i)}
+                      aria-label="この写真を削除"
+                    >✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {photos.length < MAX_PHOTOS && (
+              <div className="photo-btn-row">
+                <label className="photo-btn">
+                  📷 写真を撮る
+                  <input type="file" accept="image/*" capture="environment" onChange={handleAddPhoto} style={{ display: 'none' }} />
+                </label>
+                <label className="photo-btn">
+                  🖼 フォルダから選ぶ
+                  <input type="file" accept="image/*" onChange={handleAddPhoto} style={{ display: 'none' }} />
+                </label>
+              </div>
+            )}
+
+            {photos.length > 0 && (
               <>
                 <button
                   type="button"
@@ -343,6 +369,9 @@ export default function AddGreenForm({ onAdd, onClose }) {
                 >
                   {identifying ? '🔍 調べています…' : '🔍 この木の名前を調べる'}
                 </button>
+                <div className="identify-tip">
+                  💡 葉や花の<strong>アップ写真</strong>があるほど正確に判定できます。全体写真だけだと、ほぼ当たりません。
+                </div>
 
                 {candidates && (
                   <div className="candidates">
@@ -380,7 +409,7 @@ export default function AddGreenForm({ onAdd, onClose }) {
 
                 {identifyError && (
                   <div className="identify-error">
-                    {identifyError === 'no_match' && '似た植物が見つかりませんでした。葉や花に近づいて撮ると精度が上がります。'}
+                    {identifyError === 'no_match' && '似た植物が見つかりませんでした。葉や花に近づいたアップ写真を足して、もう一度試してみてください。'}
                     {identifyError === 'quota_exceeded' && '本日の判定回数の上限に達しました。明日また試してください。'}
                     {identifyError === 'not_configured' && 'この機能はまだ準備中です。名前は手で入力してください。'}
                     {identifyError === 'bad_key' && '判定サービスに接続できませんでした。名前は手で入力してください。'}
