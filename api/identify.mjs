@@ -8,7 +8,40 @@
 // 関数もここ（根っこの api/）に置く必要がある。niwagokoro/api では認識されない。
 
 const PLANTNET_ENDPOINT = 'https://my-api.plantnet.org/v2/identify/all';
-const MAX_RESULTS = 3;
+const MAX_RESULTS = 5;
+
+// 文字列に日本語（ひらがな・カタカナ・漢字）が含まれるか
+function hasJapanese(s) {
+  return /[\u3040-\u30ff\u4e00-\u9fff]/.test(s || '');
+}
+
+// 学名からWikipediaの日本語名を引く。
+// 英語版Wikipediaは学名の記事を持ち、そこから日本語版へのリンク（＝日本語名）をたどれる。
+async function fetchJapaneseName(scientificName) {
+  if (!scientificName) return null;
+  try {
+    const url = 'https://en.wikipedia.org/w/api.php'
+      + '?action=query&format=json&prop=langlinks&lllang=ja&redirects=1&titles='
+      + encodeURIComponent(scientificName);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 4000);
+    const res = await fetch(url, {
+      signal: ctrl.signal,
+      headers: { 'User-Agent': 'Niwashin-App/1.0 (plant name lookup)' },
+    });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const pages = data?.query?.pages || {};
+    for (const key of Object.keys(pages)) {
+      const ll = pages[key]?.langlinks;
+      if (ll && ll[0] && ll[0]['*']) return ll[0]['*'];
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -18,13 +51,11 @@ export default async function handler(req, res) {
 
   const apiKey = process.env.PLANTNET_API_KEY;
   if (!apiKey) {
-    // キー未設定でもアプリ本体は動かしたいので、判定機能だけ無効として返す
     res.status(200).json({ error: 'not_configured', results: [] });
     return;
   }
 
   try {
-    // req.body が文字列で来る場合もあるので両対応
     let body = req.body;
     if (typeof body === 'string') {
       try { body = JSON.parse(body); } catch { body = {}; }
@@ -35,13 +66,12 @@ export default async function handler(req, res) {
       return;
     }
 
-    // data URL（data:image/jpeg;base64,....）からデータ部分だけ取り出す
     const base64 = image.includes(',') ? image.split(',')[1] : image;
     const bytes = Buffer.from(base64, 'base64');
 
     const form = new FormData();
     form.append('images', new Blob([bytes], { type: 'image/jpeg' }), 'photo.jpg');
-    form.append('organs', 'auto'); // 花・葉・幹などを自動で判断させる
+    form.append('organs', 'auto');
 
     const url = `${PLANTNET_ENDPOINT}?api-key=${encodeURIComponent(apiKey)}`
       + `&include-related-images=true&nb-results=${MAX_RESULTS}&lang=ja`;
@@ -49,7 +79,6 @@ export default async function handler(req, res) {
     const response = await fetch(url, { method: 'POST', body: form });
 
     if (!response.ok) {
-      // 404 = 該当する植物が見つからなかった／429 = 1日の上限に達した
       const error = response.status === 404 ? 'no_match'
         : response.status === 429 ? 'quota_exceeded'
         : response.status === 401 || response.status === 403 ? 'bad_key'
@@ -59,12 +88,19 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    const results = (data.results || []).slice(0, MAX_RESULTS).map((item) => ({
+    const base = (data.results || []).slice(0, MAX_RESULTS).map((item) => ({
       score: item.score ?? 0,
       scientificName: item.species?.scientificNameWithoutAuthor || '',
       commonNames: item.species?.commonNames || [],
-      // 見比べてもらうための参考写真
       image: item.images?.[0]?.url?.m || item.images?.[0]?.url?.s || null,
+    }));
+
+    // 各候補に日本語名を付ける。
+    // 優先順：Wikipediaの日本語名 ＞ Pl@ntNetの日本語を含む一般名 ＞ なし（学名を使う）
+    const results = await Promise.all(base.map(async (r) => {
+      const wiki = await fetchJapaneseName(r.scientificName);
+      const fromPlantnet = (r.commonNames || []).find(hasJapanese);
+      return { ...r, japaneseName: wiki || fromPlantnet || null };
     }));
 
     res.status(200).json({ results });

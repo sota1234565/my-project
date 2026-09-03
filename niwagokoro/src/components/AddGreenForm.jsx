@@ -87,9 +87,10 @@ export default function AddGreenForm({ onAdd, onClose }) {
   const [identifyError, setIdentifyError] = useState(null);
   const [pickedFromAI, setPickedFromAI] = useState(false);
 
-  // 候補の表示名。日本語の名前があればそれを、無ければ学名を使う。
+  // 候補の表示名。日本語名を最優先し、無ければ学名を使う。
   function candidateLabel(c) {
-    return (c.commonNames && c.commonNames[0]) || c.scientificName || '名前不明';
+    const jaFromCommon = (c.commonNames || []).find(n => /[぀-ヿ一-鿿]/.test(n));
+    return c.japaneseName || jaFromCommon || c.scientificName || '名前不明';
   }
 
   async function handleIdentify() {
