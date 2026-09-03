@@ -3,6 +3,9 @@
 // この処理をサーバー側に置いているのは、APIキーを隠すため。
 // アプリのコードに書くと誰でも見られてしまい、1日の利用枠を使い切られる恐れがある。
 // キーは Vercel の環境変数 PLANTNET_API_KEY から読む。
+//
+// 置き場所メモ：VercelのRoot Directoryはリポジトリの根っこなので、
+// 関数もここ（根っこの api/）に置く必要がある。niwagokoro/api では認識されない。
 
 const PLANTNET_ENDPOINT = 'https://my-api.plantnet.org/v2/identify/all';
 const MAX_RESULTS = 3;
@@ -21,7 +24,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { image } = req.body || {};
+    // req.body が文字列で来る場合もあるので両対応
+    let body = req.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch { body = {}; }
+    }
+    const image = body?.image;
     if (!image || typeof image !== 'string') {
       res.status(400).json({ error: 'no_image', results: [] });
       return;
