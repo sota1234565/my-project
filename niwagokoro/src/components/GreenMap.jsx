@@ -311,7 +311,6 @@ export default function GreenMap({ items, selectedItem, onSelectItem }) {
                 key={item.id}
                 position={[item.location.lat, item.location.lng]}
                 icon={makeEmojiIcon(typeInfo.emoji, isSelected, isNearby, item.condition)}
-                eventHandlers={{ click: () => onSelectItem(item) }}
                 zIndexOffset={isSelected ? 1000 : 0}
               >
                 <Popup className="custom-popup">

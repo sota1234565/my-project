@@ -1,6 +1,6 @@
 // 庭心 Service Worker
 // キャッシュ名のバージョンを上げると、古いキャッシュが破棄されて更新される
-const CACHE = 'niwagokoro-v3';
+const CACHE = 'niwagokoro-v4';
 const TILE_CACHE = 'niwagokoro-tiles-v1';
 const TILE_LIMIT = 800; // 保存する地図タイルの上限（おおよそ20〜40MB）
 const CORE = ['/', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png'];
@@ -77,19 +77,18 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // 静的アセット：キャッシュを即返しつつ裏で更新
+  // 静的アセット：ネットワーク優先。通信できるときは必ず最新を取り、
+  // 取れたものはキャッシュに保存。オフラインのときだけキャッシュから返す。
+  // （以前は「キャッシュ優先」だったため、更新しても古いコードが残り続けた）
   e.respondWith(
-    caches.match(req).then((cached) => {
-      const network = fetch(req)
-        .then((res) => {
-          if (res && res.status === 200) {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(req, copy));
-          }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+    fetch(req)
+      .then((res) => {
+        if (res && res.status === 200) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy));
+        }
+        return res;
+      })
+      .catch(() => caches.match(req))
   );
 });

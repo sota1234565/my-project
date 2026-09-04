@@ -14,4 +14,14 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {})
   })
+
+  // 新しいService Workerが有効になったら、一度だけ自動でリロードして
+  // 最新のコードに切り替える。これがないと、ホーム画面から起動したPWAが
+  // 古いままになり、修正が端末に届かない。
+  let reloaded = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloaded) return
+    reloaded = true
+    window.location.reload()
+  })
 }
