@@ -15,14 +15,9 @@ function hasJapanese(s) {
   return /[\u3040-\u30ff\u4e00-\u9fff]/.test(s || '');
 }
 
-// 学名からWikipediaの日本語名を引く。
-// 英語版Wikipediaは学名の記事を持ち、そこから日本語版へのリンク（＝日本語名）をたどれる。
-async function fetchJapaneseName(scientificName) {
-  if (!scientificName) return null;
+// タイムアウト付きの共通fetch（JSONを返す）
+async function fetchJson(url) {
   try {
-    const url = 'https://en.wikipedia.org/w/api.php'
-      + '?action=query&format=json&prop=langlinks&lllang=ja&redirects=1&titles='
-      + encodeURIComponent(scientificName);
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 4000);
     const res = await fetch(url, {
@@ -31,16 +26,48 @@ async function fetchJapaneseName(scientificName) {
     });
     clearTimeout(timer);
     if (!res.ok) return null;
-    const data = await res.json();
-    const pages = data?.query?.pages || {};
-    for (const key of Object.keys(pages)) {
-      const ll = pages[key]?.langlinks;
-      if (ll && ll[0] && ll[0]['*']) return ll[0]['*'];
-    }
-    return null;
+    return await res.json();
   } catch {
     return null;
   }
+}
+
+// 英語Wikipedia記事 → 日本語版へのリンク（＝日本語名）
+async function fromWikipedia(sci) {
+  const data = await fetchJson(
+    'https://en.wikipedia.org/w/api.php?action=query&format=json&prop=langlinks&lllang=ja&redirects=1&titles='
+    + encodeURIComponent(sci)
+  );
+  const pages = data?.query?.pages || {};
+  for (const key of Object.keys(pages)) {
+    const ll = pages[key]?.langlinks;
+    if (ll && ll[0] && ll[0]['*']) return ll[0]['*'];
+  }
+  return null;
+}
+
+// Wikidata：学名で項目を検索し、日本語ラベル（和名）を取る。
+// Wikipediaに記事が無い種でも、Wikidataには和名だけある場合が多い。
+async function fromWikidata(sci) {
+  const s = await fetchJson(
+    'https://www.wikidata.org/w/api.php?action=wbsearchentities&format=json&language=en&type=item&limit=1&search='
+    + encodeURIComponent(sci)
+  );
+  const id = s?.search?.[0]?.id;
+  if (!id) return null;
+  const e = await fetchJson(
+    'https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=labels&languages=ja&ids=' + id
+  );
+  return e?.entities?.[id]?.labels?.ja?.value || null;
+}
+
+// 学名から日本語名を引く。まずWikipedia、無ければWikidata。
+// 最後に「本当に日本語か」を確認し、ラテン語のままなら null（＝学名表示に任せる）。
+async function fetchJapaneseName(scientificName) {
+  if (!scientificName) return null;
+  let name = await fromWikipedia(scientificName);
+  if (!name) name = await fromWikidata(scientificName);
+  return name && hasJapanese(name) ? name : null;
 }
 
 export default async function handler(req, res) {
