@@ -86,10 +86,26 @@ const USER_ICON = L.divIcon({
   popupAnchor: [0, -12],
 });
 
+// 地図を安全に移動する。座標が不正（NaN）や、地図の大きさがまだ0のときにクラッシュしないようにする。
+function moveMap(map, lat, lng, zoom) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+  try {
+    const size = map.getSize();
+    if (size.x > 0 && size.y > 0) {
+      map.flyTo([lat, lng], zoom, { duration: 1.2 });
+    } else {
+      // 大きさが未確定のときはアニメーションなしで位置だけ合わせる
+      map.setView([lat, lng], zoom, { animate: false });
+    }
+  } catch {
+    // 何かあっても地図移動でアプリ全体を落とさない
+  }
+}
+
 function FlyTo({ item }) {
   const map = useMap();
   useEffect(() => {
-    if (item) map.flyTo([item.location.lat, item.location.lng], 17, { duration: 1.2 });
+    if (item) moveMap(map, item.location?.lat, item.location?.lng, 17);
   }, [item, map]);
   return null;
 }
@@ -105,11 +121,13 @@ function FollowUser({ pos, following, onManualDrag }) {
 
   useEffect(() => {
     if (!pos || !following) return;
+    const [lat, lng] = pos;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
     if (firstRef.current) {
       firstRef.current = false;
-      map.flyTo(pos, 17, { duration: 1.2 });
+      moveMap(map, lat, lng, 17);
     } else {
-      map.panTo(pos, { animate: true, duration: 0.6 });
+      try { map.panTo([lat, lng], { animate: true, duration: 0.6 }); } catch { /* ignore */ }
     }
   }, [pos, following, map]);
 

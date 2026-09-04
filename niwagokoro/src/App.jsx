@@ -256,7 +256,7 @@ export default function App() {
           />
         )}
 
-        <div className={`sidebar ${mobileTab === 'list' || mobileTab === 'ranking' ? 'mobile-visible' : ''}`}>
+        <div className={`sidebar ${mobileTab === 'list' || mobileTab === 'ranking' || (showDetail && selectedItem) ? 'mobile-visible' : ''}`}>
           {activeView === 'ranking' && !showDetail ? (
             <RankingPanel
               items={items}
@@ -376,7 +376,7 @@ export default function App() {
         </div>
       </div>
 
-      {(activeView === 'map' && mobileTab === 'map') && (
+      {(activeView === 'map' && mobileTab === 'map' && !showDetail) && (
         <button className="fab" onClick={() => setShowAddForm(true)} title="新しい緑地を登録">
           +
         </button>
@@ -384,16 +384,16 @@ export default function App() {
 
       {/* モバイル用タブバー */}
       <nav className="mobile-tab-bar">
-        <button className={`mobile-tab-btn ${mobileTab === 'map' ? 'active' : ''}`} onClick={() => { setMobileTab('map'); setActiveView('map'); }}>
+        <button className={`mobile-tab-btn ${mobileTab === 'map' ? 'active' : ''}`} onClick={() => { setMobileTab('map'); setActiveView('map'); setShowDetail(false); }}>
           <span className="tab-icon">🗺️</span>地図
         </button>
         <button className="mobile-tab-btn" onClick={() => setShowAddForm(true)}>
           <span className="tab-icon">➕</span>登録
         </button>
-        <button className={`mobile-tab-btn ${mobileTab === 'list' ? 'active' : ''}`} onClick={() => { setMobileTab('list'); setActiveView('map'); }}>
+        <button className={`mobile-tab-btn ${mobileTab === 'list' ? 'active' : ''}`} onClick={() => { setMobileTab('list'); setActiveView('map'); setShowDetail(false); }}>
           <span className="tab-icon">🌿</span>一覧
         </button>
-        <button className={`mobile-tab-btn ${mobileTab === 'ranking' ? 'active' : ''}`} onClick={() => { setMobileTab('ranking'); setActiveView('ranking'); }}>
+        <button className={`mobile-tab-btn ${mobileTab === 'ranking' ? 'active' : ''}`} onClick={() => { setMobileTab('ranking'); setActiveView('ranking'); setShowDetail(false); }}>
           <span className="tab-icon">🏆</span>ランキング
         </button>
       </nav>
