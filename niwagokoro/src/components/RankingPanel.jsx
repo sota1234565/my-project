@@ -39,13 +39,17 @@ export default function RankingPanel({ items, users, onSelectItem }) {
         return (
           <div key={item.id} className="ranking-item" onClick={() => onSelectItem(item)}>
             <div className={`rank-badge ${getRankClass(i)}`}>{i + 1}</div>
-            <div style={{ flex: 1 }}>
+            {item.photo
+              ? <img src={item.photo} alt="" className="ranking-thumb" loading="lazy" />
+              : <div className="ranking-thumb ranking-thumb-empty">{typeInfo.emoji}</div>}
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div className="ranking-item-name">{typeInfo.emoji} {item.name}</div>
-              <div className="ranking-item-sub">{item.id} · {item.location.address}</div>
+              {/* 生のデータベースキーではなく、表示用のコードを出す */}
+              <div className="ranking-item-sub">{item.code || ''} {item.location.address}</div>
             </div>
-            <div>
+            <div className="ranking-value-wrap">
               <div className="ranking-item-value">{item.supporters.length}</div>
-              <div style={{ fontSize: '0.65rem', color: '#ccc', textAlign: 'right' }}>推し</div>
+              <div className="ranking-value-label">推し</div>
             </div>
           </div>
         );

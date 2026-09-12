@@ -200,12 +200,13 @@ export default function App() {
 
   return (
     <div className="app">
-      <header className="header">
-        <h1 className="header-logo" onClick={handleLogoTap}>
-          <LeafMark size={26} />
+      {/* トップバー。スマホでは地図の上に浮かぶガラス調のバーになる（CSS側で切り替え） */}
+      <header className="topbar">
+        <h1 className="brand" onClick={handleLogoTap}>
+          <LeafMark size={22} />
           庭心
         </h1>
-        <nav className="header-nav">
+        <nav className="topbar-nav">
           {Object.entries(VIEWS).map(([key, label]) => (
             <button
               key={key}
@@ -216,30 +217,11 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <div className="header-user">
-          <span>👤 あなた</span>
-          <span className="user-points">{myPoints}pt</span>
+        <div className="points-chip" title={`${myPoints}ポイント`}>
+          <span className="points-value">{myPoints}</span>
+          <span className="points-unit">pt</span>
         </div>
       </header>
-
-      <div className="stats-bar">
-        <div className="stat-item">
-          <span className="stat-num">{items.length}</span>
-          <span>件の緑地</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-num">{totalSupporters}</span>
-          <span>件の推し登録</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-num">{totalObs}</span>
-          <span>件の観察記録</span>
-        </div>
-        <div className="stat-item" style={{ color: pendingCount > 0 ? '#f4a261' : 'inherit' }}>
-          <span className="stat-num">{pendingCount}</span>
-          <span>件 公開待ち</span>
-        </div>
-      </div>
 
       {saveError && (
         <div className="storage-warning">
@@ -274,7 +256,16 @@ export default function App() {
           ) : (
             <>
               <div className="sidebar-header">
-                <div className="sidebar-title">緑地一覧</div>
+                <div className="sidebar-title">まちの緑</div>
+                {/* 以前は黒い帯だった統計を、ここに軽く置く */}
+                <div className="list-stats">
+                  <span><b>{items.length}</b> 件</span>
+                  <span><b>{totalSupporters}</b> 推し</span>
+                  <span><b>{totalObs}</b> 観察</span>
+                  {pendingCount > 0 && (
+                    <span className="list-stat-pending"><b>{pendingCount}</b> 公開待ち</span>
+                  )}
+                </div>
                 <div className="filter-row">
                   {FILTERS.map(f => (
                     <button
@@ -319,27 +310,34 @@ export default function App() {
                       className={`green-card ${selectedId === item.id ? 'selected' : ''}`}
                       onClick={() => handleSelectItem(item)}
                     >
-                      <div className="card-header">
-                        <span className="card-id">{item.code || ''}</span>
+                      {/* 写真が主役。無い場合は種別の絵文字で穴を埋める */}
+                      <div className="card-media">
+                        {item.photo ? (
+                          <img src={item.photo} alt={item.name} className="card-photo" loading="lazy" />
+                        ) : (
+                          <div className="card-photo card-photo-empty">{typeInfo.emoji}</div>
+                        )}
                         <span
                           className="card-type-badge"
-                          style={{ background: typeInfo.color + '22', color: typeInfo.color }}
+                          style={{ color: typeInfo.color }}
                         >
                           {typeInfo.emoji} {typeInfo.label}
                         </span>
+                        {item.isMinePending && (
+                          <span className="card-pending">🕓 公開待ち</span>
+                        )}
                       </div>
-                      <div className="card-name">{item.name}</div>
-                      <div className="card-address">📍 {item.location.address}</div>
-                      {item.isMinePending && (
-                        <div className="pending-badge">🕓 公開待ち（今はあなたにだけ表示）</div>
-                      )}
-                      <div className="card-footer">
-                        <span className={`condition-badge condition-${item.condition}`}>
-                          {CONDITION_LABELS[item.condition]}
-                        </span>
-                        <span className="supporter-count">
-                          💚 {item.supporters.length}人が推し
-                        </span>
+                      <div className="card-body">
+                        <div className="card-name">{item.name}</div>
+                        <div className="card-address">📍 {item.location.address}</div>
+                        <div className="card-footer">
+                          <span className={`condition-badge condition-${item.condition}`}>
+                            {CONDITION_LABELS[item.condition]}
+                          </span>
+                          <span className="supporter-count">
+                            💚 {item.supporters.length}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   );

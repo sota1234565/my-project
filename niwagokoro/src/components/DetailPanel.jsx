@@ -23,6 +23,8 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
 
   return (
     <div className="detail-panel">
+      {/* スマホではボトムシートになるので、つまんで閉じられる印としてハンドルを置く */}
+      <button className="sheet-handle" onClick={onBack} aria-label="閉じる" />
       <div className="detail-panel-header">
         <button className="back-btn" onClick={onBack}>← 一覧に戻る</button>
         <div className="detail-id">{item.id}</div>

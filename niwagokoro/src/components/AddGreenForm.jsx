@@ -244,8 +244,14 @@ export default function AddGreenForm({ onAdd, onClose }) {
   return (
     <div className="add-form-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="add-form-box">
-        <div className="add-form-title">🌱 新しい緑地を登録</div>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="add-form">
+          {/* 上下は固定。長いフォームでも「登録する」が常に押せる */}
+          <div className="sheet-topbar">
+            <div className="add-form-title">🌱 新しい緑地を登録</div>
+            <button type="button" className="sheet-close" onClick={onClose} aria-label="閉じる">✕</button>
+          </div>
+
+          <div className="add-form-body">
           <div className="form-group">
             <label className="form-label">種別 *</label>
             <select className="form-select" name="type" value={form.type} onChange={handleChange}>
@@ -429,6 +435,8 @@ export default function AddGreenForm({ onAdd, onClose }) {
               value={form.description}
               onChange={handleChange}
             />
+          </div>
+
           </div>
 
           <div className="form-actions">
