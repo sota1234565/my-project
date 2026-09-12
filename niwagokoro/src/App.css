@@ -919,7 +919,9 @@ body {
 @media (max-width: 400px) {
   .photo-btn-row { flex-direction: column; }
 }
-.detail-photo { width: 100%; max-height: 240px; object-fit: cover; border-radius: var(--radius); margin-bottom: 1rem; }
+/* 写真は切り取らず、枠を写真の形に自動で合わせて全体を見せる。
+   極端に縦長な写真だけ 75vh で頭打ちにする。タップで全画面表示できる。 */
+.detail-photo { width: 100%; height: auto; max-height: 75vh; object-fit: contain; background: var(--surface); border-radius: var(--radius); margin-bottom: 1rem; cursor: pointer; }
 
 /* ── 写真から名前を調べる ── */
 .identify-btn {
@@ -1022,8 +1024,44 @@ body {
 .photo-thumb-remove { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border: none; border-radius: 50%; background: rgba(0,0,0,0.55); color: #fff; font-size: 0.7rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .identify-tip { margin-top: 0.4rem; font-size: 0.72rem; color: #6b3fa0; line-height: 1.6; }
 .identify-tip strong { color: #55308a; }
-.detail-photo-gallery { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: -0.4rem 0 1rem; }
-.detail-photo-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+.detail-gallery-label { font-size: 0.78rem; color: var(--text-muted); margin: 0 0 0.4rem; }
+.detail-photo-gallery { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 1rem; }
+.detail-photo-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; }
+
+/* 写真の全画面表示（ライトボックス） */
+.photo-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.photo-lightbox img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+}
+.photo-lightbox-close {
+  position: absolute;
+  top: calc(0.75rem + env(safe-area-inset-top));
+  right: 0.9rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 .locate-btn {
   position: absolute;

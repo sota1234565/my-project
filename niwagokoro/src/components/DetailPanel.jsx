@@ -10,6 +10,7 @@ const CONDITION_LABELS = {
 export default function DetailPanel({ item, currentUserId, onBack, onSupport, onAddObservation, onDelete }) {
   const [obsText, setObsText] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [lightbox, setLightbox] = useState(null); // 全画面で見せる写真のURL（nullで閉じる）
   const typeInfo = GREEN_TYPES[item.type];
   const isSupported = item.supporters.includes(currentUserId);
 
@@ -53,16 +54,30 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
           </div>
         )}
 
-        {/* 写真 */}
+        {/* 写真（タップで全画面表示） */}
         {item.photo && (
-          <img src={item.photo} alt={item.name} className="detail-photo" />
+          <img
+            src={item.photo}
+            alt={item.name}
+            className="detail-photo"
+            onClick={() => setLightbox(item.photo)}
+          />
         )}
         {Array.isArray(item.photos) && item.photos.length > 1 && (
-          <div className="detail-photo-gallery">
-            {item.photos.slice(1).map((src, i) => (
-              <img key={i} src={src} alt="" className="detail-photo-thumb" />
-            ))}
-          </div>
+          <>
+            <div className="detail-gallery-label">🔍 判別用に撮ったアップ写真（タップで拡大）</div>
+            <div className="detail-photo-gallery">
+              {item.photos.slice(1).map((src, i) => (
+                <img
+                  key={i}
+                  src={src}
+                  alt=""
+                  className="detail-photo-thumb"
+                  onClick={() => setLightbox(src)}
+                />
+              ))}
+            </div>
+          </>
         )}
 
         {/* 説明 */}
@@ -176,6 +191,20 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
           </div>
         )}
       </div>
+
+      {/* 写真の全画面表示。背景か✕をタップで閉じる。 */}
+      {lightbox && (
+        <div className="photo-lightbox" onClick={() => setLightbox(null)}>
+          <button
+            className="photo-lightbox-close"
+            onClick={() => setLightbox(null)}
+            aria-label="閉じる"
+          >
+            ✕
+          </button>
+          <img src={lightbox} alt="" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
     </div>
   );
 }
