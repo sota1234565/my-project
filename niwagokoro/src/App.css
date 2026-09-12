@@ -1564,7 +1564,9 @@ body {
   .sidebar.mobile-visible {
     display: flex;
     position: fixed;
-    top: 0; left: 0; right: 0;
+    /* ヘッダー（高さ50px＋セーフエリア）のすぐ下から始める。
+       top:0 だと詳細の一番上（戻るボタン・木の名前）がヘッダーに隠れてしまう。 */
+    top: calc(50px + env(safe-area-inset-top)); left: 0; right: 0;
     bottom: calc(56px + env(safe-area-inset-bottom));
     z-index: 800;
     overflow-y: auto;
