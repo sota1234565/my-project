@@ -449,6 +449,7 @@ export default function App() {
       {showAdmin && (
         <AdminPanel
           items={allItems}
+          names={names}
           onClose={() => setShowAdmin(false)}
         />
       )}

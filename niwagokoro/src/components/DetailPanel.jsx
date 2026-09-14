@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { GREEN_TYPES } from '../data/greenItems';
+import { hasNgWord } from '../moderation';
 
 const CONDITION_LABELS = {
   healthy: '健全',
@@ -11,12 +12,19 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
   const [obsText, setObsText] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [lightbox, setLightbox] = useState(null); // 全画面で見せる写真のURL（nullで閉じる）
+  const [obsError, setObsError] = useState(null);
   const typeInfo = GREEN_TYPES[item.type];
   const isSupported = item.supporters.includes(currentUserId);
 
   function handleSubmitObs(e) {
     e.preventDefault();
     if (!obsText.trim()) return;
+    // 下ネタ・悪口はここで止める（サーバー側のルールでも同じ基準で弾かれる）
+    if (hasNgWord(obsText)) {
+      setObsError('その表現は投稿できません。言い方を変えてください。');
+      return;
+    }
+    setObsError(null);
     onAddObservation(item.id, obsText.trim());
     setObsText('');
   }
@@ -162,8 +170,9 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
           <textarea
             placeholder="観察したことを記録してみよう（例：新芽が出てきました、少し元気がなさそうです…）"
             value={obsText}
-            onChange={e => setObsText(e.target.value)}
+            onChange={e => { setObsText(e.target.value); setObsError(null); }}
           />
+          {obsError && <div className="obs-error">{obsError}</div>}
           <button type="submit" className="obs-submit-btn">
             📝 記録を投稿する (+10pt)
           </button>

@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import { ref, update, remove } from 'firebase/database';
+import { ref, update, remove, set } from 'firebase/database';
 import { db, auth, googleProvider } from '../firebase';
 import { GREEN_TYPES } from '../data/greenItems';
 
 // 承認・削除ができるのはデータベースのルールで許可された人だけ。
 // この画面を開けても、権限が無ければ操作は拒否される。
-export default function AdminPanel({ items, onClose }) {
+export default function AdminPanel({ items, names = {}, onClose }) {
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState(null);
-  const [tab, setTab] = useState('pending'); // 'pending' | 'approved'
+  const [tab, setTab] = useState('pending'); // 'pending' | 'approved' | 'users'
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -60,6 +60,19 @@ export default function AdminPanel({ items, onClose }) {
     setBusyId(null);
   }
 
+  // 不適切なニックネームを消す。フィルターをすり抜けたときの最後の砦。
+  async function resetName(uid, name) {
+    if (!window.confirm(`「${name}」の名前をリセットします。よろしいですか？`)) return;
+    setBusyId(uid);
+    setError(null);
+    try {
+      await set(ref(db, `users/${uid}/name`), null);
+    } catch {
+      setError('名前をリセットできませんでした。');
+    }
+    setBusyId(null);
+  }
+
   function copyUid() {
     navigator.clipboard?.writeText(user.uid).then(
       () => { setCopied(true); setTimeout(() => setCopied(false), 2000); },
@@ -70,6 +83,7 @@ export default function AdminPanel({ items, onClose }) {
   const pending = items.filter(i => i.status !== 'approved');
   const approved = items.filter(i => i.status === 'approved');
   const list = tab === 'pending' ? pending : approved;
+  const namedUsers = Object.entries(names).filter(([, n]) => typeof n === 'string' && n.trim());
 
   return (
     <div className="admin-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -123,10 +137,38 @@ export default function AdminPanel({ items, onClose }) {
               >
                 公開中 {approved.length}
               </button>
+              <button
+                className={`admin-tab ${tab === 'users' ? 'active' : ''}`}
+                onClick={() => setTab('users')}
+              >
+                利用者 {namedUsers.length}
+              </button>
             </div>
 
             {error && <div className="admin-error">{error}</div>}
 
+            {tab === 'users' ? (
+              <div className="admin-list">
+                {namedUsers.length === 0 && (
+                  <div className="admin-empty">ニックネームを設定している利用者はいません。</div>
+                )}
+                {namedUsers.map(([uid, name]) => (
+                  <div key={uid} className="admin-user-row">
+                    <div className="admin-user-body">
+                      <div className="admin-user-name">{name}</div>
+                      <div className="admin-user-id">{uid}</div>
+                    </div>
+                    <button
+                      className="admin-delete"
+                      disabled={busyId === uid}
+                      onClick={() => resetName(uid, name)}
+                    >
+                      {busyId === uid ? '…' : '名前をリセット'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
             <div className="admin-list">
               {list.length === 0 && (
                 <div className="admin-empty">
@@ -179,6 +221,7 @@ export default function AdminPanel({ items, onClose }) {
                 );
               })}
             </div>
+            )}
           </>
         )}
       </div>

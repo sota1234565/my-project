@@ -13,7 +13,7 @@
         "observations": {
           "$obsId": {
             ".write": "!data.exists()",
-            ".validate": "newData.hasChildren(['userId','text','date','createdAt']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 500"
+            ".validate": "newData.hasChildren(['userId','text','date','createdAt']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 500 && !newData.child('text').val().matches(/(死ね|しね|殺す|ころす|バカ|馬鹿|アホ|カス|クズ|キモ|ブス|デブ|ハゲ|ウザ|うざ|キチガイ|きちがい|ガイジ|池沼|糞|クソ|くそ|うんこ|ウンコ|ちんこ|チンコ|ちんちん|チンチン|まんこ|マンコ|おっぱい|オッパイ|セックス|せっくす|エロ|えろ|レイプ|売春|風俗|変態|へんたい|fuck|shit|bitch|asshole|dick|pussy|cock|porn|rape|nigger|faggot|cunt|whore|slut)/i)"
           }
         }
       }
@@ -23,7 +23,7 @@
       "$uid": {
         "name": {
           ".write": true,
-          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 20"
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 20 && !newData.val().matches(/(死ね|しね|殺す|ころす|バカ|馬鹿|アホ|カス|クズ|キモ|ブス|デブ|ハゲ|ウザ|うざ|キチガイ|きちがい|ガイジ|池沼|糞|クソ|くそ|うんこ|ウンコ|ちんこ|チンコ|ちんちん|チンチン|まんこ|マンコ|おっぱい|オッパイ|セックス|せっくす|エロ|えろ|レイプ|売春|風俗|変態|へんたい|fuck|shit|bitch|asshole|dick|pussy|cock|porn|rape|nigger|faggot|cunt|whore|slut)/i)"
         }
       }
     }

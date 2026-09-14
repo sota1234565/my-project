@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { GREEN_TYPES } from '../data/greenItems';
+import { hasNgWord } from '../moderation';
 
 const NAME_MAX = 20;
 
@@ -10,14 +11,21 @@ export default function RankingPanel({ items, users, currentUserId, onSelectItem
   // ニックネームの編集（自分の行だけ）
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
+  const [nameError, setNameError] = useState(null);
 
   function startEdit(currentName) {
     setDraft(currentName === 'あなた' ? '' : currentName);
+    setNameError(null);
     setEditing(true);
   }
 
   function submitName(e) {
     e.preventDefault();
+    // 下ネタ・悪口はここで止める（サーバー側のルールでも同じ基準で弾かれる）
+    if (hasNgWord(draft)) {
+      setNameError('その名前は使えません。別の名前にしてください。');
+      return;
+    }
     onSetName(draft);
     setEditing(false);
   }
@@ -100,8 +108,9 @@ export default function RankingPanel({ items, users, currentUserId, onSelectItem
                     maxLength={NAME_MAX}
                     placeholder="ニックネーム（20文字まで）"
                     autoFocus
-                    onChange={e => setDraft(e.target.value)}
+                    onChange={e => { setDraft(e.target.value); setNameError(null); }}
                   />
+                  {nameError && <div className="name-edit-error">{nameError}</div>}
                   <button type="submit" className="name-edit-save">保存</button>
                   <button type="button" className="name-edit-cancel" onClick={() => setEditing(false)}>
                     やめる
