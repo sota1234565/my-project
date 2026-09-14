@@ -60,6 +60,21 @@ export default function AdminPanel({ items, names = {}, onClose }) {
     setBusyId(null);
   }
 
+  // 不適切な観察記録を消す。フィルターをすり抜けたときの最後の砦（管理者のみ可）。
+  async function deleteObs(itemId, obsId, text) {
+    if (!window.confirm(`この観察記録を削除します。
+「${text}」
+よろしいですか？`)) return;
+    setBusyId(obsId);
+    setError(null);
+    try {
+      await remove(ref(db, `greenItems/${itemId}/observations/${obsId}`));
+    } catch {
+      setError('観察記録を削除できませんでした。');
+    }
+    setBusyId(null);
+  }
+
   // 不適切なニックネームを消す。フィルターをすり抜けたときの最後の砦。
   async function resetName(uid, name) {
     if (!window.confirm(`「${name}」の名前をリセットします。よろしいですか？`)) return;
@@ -189,6 +204,23 @@ export default function AdminPanel({ items, names = {}, onClose }) {
                       <div className="admin-item-meta">📍 {item.location?.address}</div>
                       {item.description && (
                         <div className="admin-item-desc">{item.description}</div>
+                      )}
+                      {/* 観察記録。不適切なものはここから個別に消せる */}
+                      {Object.entries(item.observations || {}).length > 0 && (
+                        <div className="admin-obs-list">
+                          {Object.entries(item.observations).map(([obsId, o]) => (
+                            <div key={obsId} className="admin-obs-row">
+                              <span className="admin-obs-text">{o.text}</span>
+                              <button
+                                className="admin-obs-delete"
+                                disabled={busyId === obsId}
+                                onClick={() => deleteObs(item.id, obsId, o.text)}
+                              >
+                                {busyId === obsId ? '…' : '削除'}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       )}
                       <div className="admin-actions">
                         {tab === 'pending' ? (
