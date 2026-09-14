@@ -164,7 +164,8 @@ export default function GreenMap({ items, selectedItem, onSelectItem, routeTarge
   const [locError, setLocError] = useState(null); // null | 'denied' | 'timeout' | 'unavailable' | 'unsupported'
   const [tileStyle, setTileStyle] = useState('pale'); // 'pale'（地図） | 'photo'（航空写真）
   const watchIdRef = useRef(null);
-  // 経路：{ loading } | { noPosition } | { coords, distance, fallback }
+  // 経路。どの緑地の経路かを targetId で持ち、表示時に今の routeTarget と一致するものだけ使う
+  // （対象が変わったり消えたりしたときに、effect内で同期的に消す必要がなくなる）。
   const [route, setRoute] = useState(null);
   // 経路取得の瞬間の現在地を読むためのref（effectの依存に userPos を入れないため）
   const userPosRef = useRef(null);
@@ -227,13 +228,12 @@ export default function GreenMap({ items, selectedItem, onSelectItem, routeTarge
   // 経路表示：現在地を取り、無料の経路サービス（OSRM）で道順を取得して線を描く。
   // OSRMの公開サーバーは徒歩でも車の道で計算するため、所要時間は距離から自前で出す（maps.js）。
   useEffect(() => {
-    if (!routeTarget) { setRoute(null); return; }
+    if (!routeTarget) return;
     const lat = routeTarget.location?.lat, lng = routeTarget.location?.lng;
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) { setRoute(null); return; }
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
     const dest = [lat, lng];
+    const targetId = routeTarget.id;
     let cancelled = false;
-    setFollowing(false); // 追従中だと fitBounds と喧嘩する
-    setRoute({ loading: true });
 
     const getOrigin = () => new Promise((resolve, reject) => {
       if (userPosRef.current) return resolve(userPosRef.current);
@@ -246,37 +246,63 @@ export default function GreenMap({ items, selectedItem, onSelectItem, routeTarge
     });
 
     (async () => {
+      setFollowing(false); // 追従中だと fitBounds と喧嘩する
+      setRoute({ targetId, loading: true });
       let origin;
       try {
         origin = await getOrigin();
       } catch (err) {
         if (cancelled) return;
         setLocError(err && err.code === 1 ? 'denied' : 'unavailable');
-        setRoute({ noPosition: true });
+        setRoute({ targetId, noPosition: true });
         return;
       }
       if (cancelled) return;
       setUserPos(origin);
-      try {
+      // 1) 歩行者用の正確な経路（OpenRouteService。サーバー関数経由でキーを隠す）
+      // 2) だめなら OSRM の公開サーバー（車の道ベースだが街なかでは形はほぼ同じ）
+      // 3) それもだめなら直線。どの段でも「壊れて見えない」ようにする。
+      const viaOrs = async () => {
+        const res = await fetch('/api/route', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ from: origin, to: dest }),
+        });
+        const data = await res.json();
+        if (data.error || !Array.isArray(data.coords)) throw new Error(data.error || 'no route');
+        return { coords: data.coords, distance: data.distance, duration: data.duration, provider: 'ors', fallback: false };
+      };
+      const viaOsrm = async () => {
         const url = `https://router.project-osrm.org/route/v1/foot/${origin[1]},${origin[0]};${dest[1]},${dest[0]}?overview=full&geometries=geojson`;
         const res = await fetch(url);
         const data = await res.json();
         if (data.code !== 'Ok' || !data.routes?.[0]) throw new Error('no route');
         const r = data.routes[0];
-        const coords = r.geometry.coordinates.map(([x, y]) => [y, x]);
-        if (!cancelled) setRoute({ coords, distance: r.distance, fallback: false });
-      } catch {
-        // 経路サービスが使えないときは直線で代替し、機能が壊れて見えないようにする
-        if (!cancelled) setRoute({
+        return {
+          coords: r.geometry.coordinates.map(([x, y]) => [y, x]),
+          distance: r.distance, duration: null, provider: 'osrm', fallback: false,
+        };
+      };
+      let result = null;
+      try { result = await viaOrs(); } catch { try { result = await viaOsrm(); } catch { result = null; } }
+      if (cancelled) return;
+      if (result) {
+        setRoute({ targetId, ...result });
+      } else {
+        setRoute({
+          targetId,
           coords: [origin, dest],
           distance: getDistance(origin[0], origin[1], dest[0], dest[1]),
-          fallback: true,
+          duration: null, provider: null, fallback: true,
         });
       }
     })();
 
     return () => { cancelled = true; };
   }, [routeTarget]);
+
+  // 今表示すべき経路（対象が変わった・消えたときは自然に null になる）
+  const activeRoute = routeTarget && route && route.targetId === routeTarget.id ? route : null;
 
   // ボタン：停止中→追従開始／地図を動かした後→現在地に戻す／追従中→停止
   function handleLocate() {
@@ -321,20 +347,20 @@ export default function GreenMap({ items, selectedItem, onSelectItem, routeTarge
         {selectedItem && <FlyTo item={selectedItem} />}
 
         {/* 経路。白い縁取りの上に青い線（Googleマップ風）。取得できないときは破線の直線 */}
-        {route?.coords && (
+        {activeRoute?.coords && (
           <>
             <Polyline
-              positions={route.coords}
+              positions={activeRoute.coords}
               pathOptions={{ color: '#ffffff', weight: 10, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }}
             />
             <Polyline
-              positions={route.coords}
+              positions={activeRoute.coords}
               pathOptions={{
                 color: '#2563eb', weight: 6, opacity: 0.9, lineCap: 'round', lineJoin: 'round',
-                dashArray: route.fallback ? '10 12' : undefined,
+                dashArray: activeRoute.fallback ? '10 12' : undefined,
               }}
             />
-            <FitRoute coords={route.coords} />
+            <FitRoute coords={activeRoute.coords} />
           </>
         )}
         <FollowUser
@@ -493,18 +519,19 @@ export default function GreenMap({ items, selectedItem, onSelectItem, routeTarge
         </div>
       )}
       {/* 経路カード：所要時間・距離・Googleマップへの引き渡し */}
-      {routeTarget && route && (
+      {activeRoute && (
         <div className="route-card">
           <button className="route-card-close" onClick={onClearRoute} title="経路を消す">✕</button>
           <div className="route-card-title">🚶 {routeTarget.name} まで</div>
-          {route.loading && <div className="route-card-sub">経路を調べています…</div>}
-          {route.noPosition && (
+          {activeRoute.loading && <div className="route-card-sub">経路を調べています…</div>}
+          {activeRoute.noPosition && (
             <div className="route-card-sub">現在地が取れませんでした。Googleマップなら案内できます。</div>
           )}
-          {route.coords && (
+          {activeRoute.coords && (
             <div className="route-card-stat">
-              徒歩 約<b>{walkMinutes(route.distance)}</b>分 · {formatDistance(route.distance)}
-              {route.fallback && <span className="route-card-note">（経路を取得できず、直線距離です）</span>}
+              徒歩 約<b>{activeRoute.duration ? Math.max(1, Math.round(activeRoute.duration / 60)) : walkMinutes(activeRoute.distance)}</b>分 · {formatDistance(activeRoute.distance)}
+              {activeRoute.fallback && <span className="route-card-note">（経路を取得できず、直線距離です）</span>}
+              {activeRoute.provider === 'osrm' && <span className="route-card-note">（簡易ルート：車道ベースの道順です）</span>}
             </div>
           )}
           <a
@@ -515,7 +542,10 @@ export default function GreenMap({ items, selectedItem, onSelectItem, routeTarge
           >
             📍 Googleマップで案内
           </a>
-          {route.coords && !route.fallback && (
+          {activeRoute.provider === 'ors' && (
+            <div className="route-card-credit">経路: openrouteservice · © OpenStreetMap contributors</div>
+          )}
+          {activeRoute.provider === 'osrm' && (
             <div className="route-card-credit">経路: OSRM · © OpenStreetMap contributors</div>
           )}
         </div>
