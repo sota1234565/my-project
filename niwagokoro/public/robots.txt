@@ -2,4 +2,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://niwashin.vercel.app/sitemap.xml
+Sitemap: https://niwashin-app.vercel.app/sitemap.xml
