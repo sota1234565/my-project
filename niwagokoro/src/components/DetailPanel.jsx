@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { GREEN_TYPES } from '../data/greenItems';
 import { hasNgWord } from '../moderation';
+import { googleMapsDirUrl } from '../maps';
 
 const CONDITION_LABELS = {
   healthy: '健全',
@@ -8,7 +9,7 @@ const CONDITION_LABELS = {
   poor: '不良',
 };
 
-export default function DetailPanel({ item, currentUserId, onBack, onSupport, onAddObservation, onDelete }) {
+export default function DetailPanel({ item, currentUserId, onBack, onSupport, onAddObservation, onShowRoute, onDelete }) {
   const [obsText, setObsText] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [lightbox, setLightbox] = useState(null); // 全画面で見せる写真のURL（nullで閉じる）
@@ -52,6 +53,22 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
           <span style={{ fontSize: '0.75rem', color: '#777' }}>
             {item.location.address}
           </span>
+        </div>
+        {/* 現地へ行く導線。地図に経路を描く／Googleマップで本物のナビへ */}
+        <div className="route-btn-row">
+          {onShowRoute && (
+            <button type="button" className="route-btn route-btn-primary" onClick={() => onShowRoute(item)}>
+              🚶 ここまでの経路
+            </button>
+          )}
+          <a
+            className="route-btn route-btn-secondary"
+            href={googleMapsDirUrl(item.location.lat, item.location.lng)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            📍 Googleマップで案内
+          </a>
         </div>
       </div>
 

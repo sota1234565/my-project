@@ -51,6 +51,7 @@ export default function App() {
   const [saveError, setSaveError] = useState(false);
   const [names, setNames] = useState({});          // { deviceId: ニックネーム }（Firebaseから）
   const [selectedId, setSelectedId] = useState(null);
+  const [routeTarget, setRouteTarget] = useState(null); // 経路を表示中の緑地（nullで非表示）
   const [activeView, setActiveView] = useState('map');
   const [activeFilter, setActiveFilter] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -161,6 +162,20 @@ export default function App() {
   function handleBack() {
     setShowDetail(false);
     setSelectedId(null);
+  }
+
+  // 現在地からその緑地までの経路を地図に描く。
+  // スマホではシートが地図を覆っているので、閉じて地図を全面に出す。
+  function handleShowRoute(item) {
+    setRouteTarget(item);
+    setSelectedId(item.id);
+    setShowDetail(false);
+    setActiveView('map');
+    setMobileTab('map');
+  }
+
+  function handleClearRoute() {
+    setRouteTarget(null);
   }
 
   // 推しは共有データベースに「誰が推したか」として記録する。もう一度押すと取り消し。
@@ -276,6 +291,8 @@ export default function App() {
             items={filteredItems}
             selectedItem={selectedItem}
             onSelectItem={handleSelectItem}
+            routeTarget={routeTarget}
+            onClearRoute={handleClearRoute}
           />
         )}
 
@@ -295,6 +312,7 @@ export default function App() {
               onBack={handleBack}
               onSupport={handleSupport}
               onAddObservation={handleAddObservation}
+              onShowRoute={handleShowRoute}
             />
           ) : (
             <>
