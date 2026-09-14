@@ -7,7 +7,8 @@
 // キーは Vercel の環境変数 ORS_API_KEY から読む（無料枠：1日2,000回）。
 // 置き場所はリポジトリの根っこの api/（identify.mjs と同じ理由）。
 
-const ORS_ENDPOINT = 'https://api.openrouteservice.org/v2/directions/foot-walking/geojson';
+// 旧 api.openrouteservice.org は非推奨。HeiGITの新ベースURLを使う（2026年9月に確認）。
+const ORS_ENDPOINT = 'https://api.heigit.org/openrouteservice/v2/directions/foot-walking/geojson';
 
 function isLatLng(p) {
   return Array.isArray(p) && p.length === 2 && Number.isFinite(p[0]) && Number.isFinite(p[1]);
