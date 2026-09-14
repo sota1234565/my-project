@@ -2,4 +2,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://my-project-psi-bay-76.vercel.app/sitemap.xml
+Sitemap: https://niwashin.vercel.app/sitemap.xml

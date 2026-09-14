@@ -10,7 +10,3 @@ export const GREEN_TYPES = {
 // それを見て足を運んだ人に誤情報を渡すことになる。よってサンプルデータは持たない。
 export const initialGreenItems = [];
 
-// 利用者も実際に使った人だけ。架空の利用者は作らない。
-export const initialUsers = [];
-
-export const CURRENT_USER = { id: 'user-me', name: 'あなた', points: 0, avatar: '🌱' };

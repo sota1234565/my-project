@@ -1,8 +1,26 @@
+import { useState } from 'react';
 import { GREEN_TYPES } from '../data/greenItems';
 
-export default function RankingPanel({ items, users, onSelectItem }) {
+const NAME_MAX = 20;
+
+export default function RankingPanel({ items, users, currentUserId, onSelectItem, onSetName }) {
   const sortedBySupport = [...items].sort((a, b) => b.supporters.length - a.supporters.length);
   const sortedUsers = [...users].sort((a, b) => b.points - a.points);
+
+  // ニックネームの編集（自分の行だけ）
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+
+  function startEdit(currentName) {
+    setDraft(currentName === 'あなた' ? '' : currentName);
+    setEditing(true);
+  }
+
+  function submitName(e) {
+    e.preventDefault();
+    onSetName(draft);
+    setEditing(false);
+  }
 
   function getRankClass(i) {
     if (i === 0) return 'rank-1';
@@ -10,6 +28,15 @@ export default function RankingPanel({ items, users, onSelectItem }) {
     if (i === 2) return 'rank-3';
     return 'rank-other';
   }
+
+  const guide = (
+    <div className="points-guide">
+      <div className="points-guide-title">📌 ポイントの獲得方法</div>
+      <div>📝 観察を記録する … +10pt</div>
+      <div>💚 推し登録する … +5pt</div>
+      <div>🌱 新しい緑地を登録する … +30pt</div>
+    </div>
+  );
 
   if (items.length === 0) {
     return (
@@ -21,12 +48,7 @@ export default function RankingPanel({ items, users, onSelectItem }) {
             緑地を登録したり、観察を記録するとポイントがたまり、ここに順位が表示されます。
           </div>
         </div>
-        <div className="points-guide">
-          <div className="points-guide-title">📌 ポイントの獲得方法</div>
-          <div>📝 観察を記録する … +10pt</div>
-          <div>💚 推し登録する … +5pt</div>
-          <div>🌱 新しい緑地を登録する … +30pt</div>
-        </div>
+        {guide}
       </div>
     );
   }
@@ -58,24 +80,53 @@ export default function RankingPanel({ items, users, onSelectItem }) {
       <div className="ranking-section-title" style={{ marginTop: '1.5rem' }}>
         🏆 市民ポイント ランキング
       </div>
-      {sortedUsers.map((user, i) => (
-        <div key={user.id} className="user-ranking-item">
-          <div className={`rank-badge ${getRankClass(i)}`}>{i + 1}</div>
-          <div className="user-avatar">{user.avatar}</div>
-          <div className="user-name">{user.name}</div>
-          <div>
-            <span className="user-points-value">{user.points}</span>
-            <span className="points-label">pt</span>
-          </div>
+      {sortedUsers.length === 0 && (
+        <div className="empty-text" style={{ padding: '0.5rem 0 1rem' }}>
+          まだポイントを持っている人がいません。
         </div>
-      ))}
+      )}
+      {sortedUsers.map((user, i) => {
+        const isMe = user.id === currentUserId;
+        return (
+          <div key={user.id} className={`user-ranking-item ${isMe ? 'is-me' : ''}`}>
+            <div className={`rank-badge ${getRankClass(i)}`}>{i + 1}</div>
+            <div className="user-avatar">{user.avatar}</div>
+            <div className="user-name-wrap">
+              {isMe && editing ? (
+                <form className="name-edit" onSubmit={submitName}>
+                  <input
+                    className="name-edit-input"
+                    value={draft}
+                    maxLength={NAME_MAX}
+                    placeholder="ニックネーム（20文字まで）"
+                    autoFocus
+                    onChange={e => setDraft(e.target.value)}
+                  />
+                  <button type="submit" className="name-edit-save">保存</button>
+                  <button type="button" className="name-edit-cancel" onClick={() => setEditing(false)}>
+                    やめる
+                  </button>
+                </form>
+              ) : (
+                <>
+                  <div className="user-name">{user.name}</div>
+                  {isMe && (
+                    <button type="button" className="name-edit-btn" onClick={() => startEdit(user.name)}>
+                      ✏️ 名前を設定
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+            <div>
+              <span className="user-points-value">{user.points}</span>
+              <span className="points-label">pt</span>
+            </div>
+          </div>
+        );
+      })}
 
-      <div className="points-guide">
-        <div className="points-guide-title">📌 ポイントの獲得方法</div>
-        <div>📝 観察を記録する … +10pt</div>
-        <div>💚 推し登録する … +5pt</div>
-        <div>🌱 新しい緑地を登録する … +30pt</div>
-      </div>
+      {guide}
     </div>
   );
 }

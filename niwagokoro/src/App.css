@@ -739,6 +739,43 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
 }
 
 .user-avatar { font-size: 1.4rem; width: 36px; text-align: center; }
+.user-name-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+.user-ranking-item.is-me { border-color: var(--green-300); background: var(--green-50); }
+
+/* ニックネームの設定 */
+.name-edit-btn {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--green-700);
+  cursor: pointer;
+}
+.name-edit-btn:hover { text-decoration: underline; }
+.name-edit { display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap; }
+.name-edit-input {
+  flex: 1;
+  min-width: 140px;
+  padding: 0.45rem 0.7rem;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--green-300);
+  background: var(--surface);
+  font-size: 16px; /* iPhoneの自動ズーム防止 */
+  font-family: inherit;
+}
+.name-edit-input:focus { outline: none; border-color: var(--green-500); box-shadow: 0 0 0 3px rgba(79,155,119,0.18); }
+.name-edit-save, .name-edit-cancel {
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 0.45rem 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.name-edit-save { background: var(--green-800); color: #fff; }
+.name-edit-cancel { background: var(--surface-2); color: var(--text-sub); }
 .user-name { flex: 1; font-size: 0.92rem; font-weight: 700; }
 
 .user-points-value {

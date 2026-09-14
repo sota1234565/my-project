@@ -7,15 +7,9 @@ import RankingPanel from './components/RankingPanel';
 import AddGreenForm from './components/AddGreenForm';
 import AdminPanel from './components/AdminPanel';
 import LeafMark from './components/LeafMark';
-import { GREEN_TYPES, CURRENT_USER } from './data/greenItems';
+import { GREEN_TYPES } from './data/greenItems';
 import { db } from './firebase';
 import { getDeviceId } from './deviceId';
-import {
-  loadPoints, savePoints,
-  loadSupports, saveSupports,
-  loadMyObs, saveMyObs,
-  clearLocalData,
-} from './localData';
 
 const VIEWS = { map: '地図', ranking: 'ランキング' };
 const FILTERS = [
@@ -28,16 +22,22 @@ const FILTERS = [
 
 const CONDITION_LABELS = { healthy: '健全', needs_care: '要ケア', poor: '不良' };
 
-// ?reset 付きURLで開いたら、この端末のローカル記録（ポイント・推し・観察）を
-// 消してから通常URLに戻す。テストデータを初期状態に戻すための入口。
-// 共有データ（Firebase上の緑地）には触れない。
-if (new URLSearchParams(window.location.search).has('reset')) {
-  clearLocalData();
-  window.location.replace(window.location.pathname);
-}
-
+// この端末の匿名ID。推し・観察記録・登録の「誰がやったか」はすべてこれで記録する。
 const deviceId = getDeviceId();
-const MY_ID = CURRENT_USER.id;
+const MY_ID = deviceId;
+
+// ポイントの配点。保存はせず、Firebase上の実データから毎回計算する（ズルができない）。
+const POINTS_PER_TREE = 30;
+const POINTS_PER_SUPPORT = 5;
+const POINTS_PER_OBS = 10;
+
+// 表示名。ニックネームがあればそれを使う。無ければ自分は「あなた」、他人はIDの末尾で区別する。
+function displayNameOf(id, names, selfId) {
+  const n = names[id];
+  if (typeof n === 'string' && n.trim()) return n.trim();
+  if (id === selfId) return 'あなた';
+  return `利用者 ${String(id).slice(-4)}`;
+}
 
 // 表示用の見た目だけのラベル（本当のIDはFirebaseが振るキー）
 function generateCode(type) {
@@ -49,9 +49,7 @@ export default function App() {
   const [allItems, setAllItems] = useState([]);   // Firebaseから来る全データ
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState(false);
-  const [myPoints, setMyPoints] = useState(() => loadPoints());
-  const [supports, setSupports] = useState(() => loadSupports()); // { itemId: true }
-  const [myObs, setMyObs] = useState(() => loadMyObs());          // { itemId: [obs] }
+  const [names, setNames] = useState({});          // { deviceId: ニックネーム }（Firebaseから）
   const [selectedId, setSelectedId] = useState(null);
   const [activeView, setActiveView] = useState('map');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -92,10 +90,23 @@ export default function App() {
     return () => unsub();
   }, []);
 
-  useEffect(() => { savePoints(myPoints); }, [myPoints]);
+  // 利用者のニックネームを購読（ランキングや観察記録の表示名に使う）
+  useEffect(() => {
+    const unsub = onValue(ref(db, 'users'), (snap) => {
+      const val = snap.val() || {};
+      const map = {};
+      for (const [id, v] of Object.entries(val)) {
+        if (v && typeof v.name === 'string') map[id] = v.name;
+      }
+      setNames(map);
+    }, () => {});
+    return () => unsub();
+  }, []);
+
+  const nameOf = (id) => displayNameOf(id, names, deviceId);
 
   // 表示するのは「承認済み」＋「自分が登録した承認待ち」。
-  // 推し・観察は各自の端末の記録を重ねる。
+  // 推し・観察記録はFirebase上の共有データなので、誰が見ても同じ数字になる。
   const items = allItems
     .filter(it => it.status === 'approved' || it.authorId === deviceId)
     .map(it => ({
@@ -105,16 +116,34 @@ export default function App() {
       // 写真は複数対応。古いデータ（photo単数）も配列に揃える。photo は表示用の「顔」。
       photos: Array.isArray(it.photos) ? it.photos : (it.photo ? [it.photo] : []),
       photo: it.photo || (Array.isArray(it.photos) ? it.photos[0] : null) || null,
-      supporters: supports[it.id] ? [MY_ID] : [],
-      observations: myObs[it.id] || [],
+      // 推した人のIDの一覧。人数は length で分かる。
+      supporters: Object.keys(it.supporters || {}),
+      // 観察記録は古い順。投稿者名は保存せず、表示のたびにIDから引く。
+      observations: Object.entries(it.observations || {})
+        .map(([id, o]) => ({ id, ...o, userName: nameOf(o.userId) }))
+        .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)),
       isMinePending: it.status !== 'approved' && it.authorId === deviceId,
     }));
 
   const selectedItem = items.find(i => i.id === selectedId) || null;
 
-  const users = myPoints > 0 || items.length > 0
-    ? [{ ...CURRENT_USER, points: myPoints }]
-    : [];
+  // ポイントは保存せず、全データ（承認前も含む）から毎回計算する。
+  // 登録 +30 / 推し +5 / 観察 +10。実際の行動からしか増えないのでズルができない。
+  const pointsById = {};
+  const add = (id, n) => { if (id) pointsById[id] = (pointsById[id] || 0) + n; };
+  for (const it of allItems) {
+    add(it.authorId, POINTS_PER_TREE);
+    for (const uid of Object.keys(it.supporters || {})) add(uid, POINTS_PER_SUPPORT);
+    for (const o of Object.values(it.observations || {})) add(o?.userId, POINTS_PER_OBS);
+  }
+  const myPoints = pointsById[deviceId] || 0;
+  // 自分はまだ0ptでもランキングに出す（名前を設定する入口になるため）
+  if (!(deviceId in pointsById)) pointsById[deviceId] = 0;
+
+  // ランキング用の利用者一覧（ポイントを持つ人全員＋自分）
+  const users = Object.entries(pointsById)
+    .map(([id, points]) => ({ id, points, name: nameOf(id), avatar: id === deviceId ? '🌱' : '👤' }))
+    .sort((a, b) => b.points - a.points);
 
   const filteredItems = items.filter(item => {
     if (activeFilter === 'all') return true;
@@ -134,31 +163,44 @@ export default function App() {
     setSelectedId(null);
   }
 
-  // 推しは自分の端末の記録として保存する
-  function handleSupport(itemId) {
-    const already = !!supports[itemId];
-    const next = { ...supports };
-    if (already) delete next[itemId];
-    else next[itemId] = true;
-    setSupports(next);
-    saveSupports(next);
-    if (!already) setMyPoints(p => p + 5);
+  // 推しは共有データベースに「誰が推したか」として記録する。もう一度押すと取り消し。
+  // ポイントは記録から計算されるので、ここで足し引きはしない。
+  async function handleSupport(itemId) {
+    const already = allItems.find(i => i.id === itemId)?.supporters?.[deviceId] === true;
+    try {
+      await set(ref(db, `greenItems/${itemId}/supporters/${deviceId}`), already ? null : true);
+      setSaveError(false);
+    } catch {
+      setSaveError(true);
+    }
   }
 
-  // 観察記録も自分の端末に保存する
-  function handleAddObservation(itemId, text) {
-    const newObs = {
-      id: `obs-${Date.now()}`,
-      userId: MY_ID,
-      userName: 'あなた',
-      date: new Date().toISOString().slice(0, 10),
+  // 観察記録も共有データベースに載せ、誰でも読めるようにする。
+  // 投稿者名は保存しない（表示のたびにIDから引く。他人の記録が「あなた」と出ないように）。
+  async function handleAddObservation(itemId, text) {
+    const obs = {
+      userId: deviceId,
       text,
-      photo: null,
+      date: new Date().toISOString().slice(0, 10),
+      createdAt: Date.now(),
     };
-    const next = { ...myObs, [itemId]: [...(myObs[itemId] || []), newObs] };
-    setMyObs(next);
-    saveMyObs(next);
-    setMyPoints(p => p + 10);
+    try {
+      await set(push(ref(db, `greenItems/${itemId}/observations`)), obs);
+      setSaveError(false);
+    } catch {
+      setSaveError(true);
+    }
+  }
+
+  // ニックネームを設定する（空なら削除）
+  async function handleSetName(name) {
+    const trimmed = (name || '').trim().slice(0, 20);
+    try {
+      await set(ref(db, `users/${deviceId}/name`), trimmed || null);
+      setSaveError(false);
+    } catch {
+      setSaveError(true);
+    }
   }
 
   // 新しい緑地を共有データベースに登録する（承認待ちで入る）
@@ -183,7 +225,6 @@ export default function App() {
     try {
       await set(newRef, record);
       setSaveError(false);
-      setMyPoints(p => p + 30);
       setShowAddForm(false);
       setSelectedId(newRef.key);
       setShowDetail(true);
@@ -243,7 +284,9 @@ export default function App() {
             <RankingPanel
               items={items}
               users={users}
+              currentUserId={MY_ID}
               onSelectItem={handleSelectItem}
+              onSetName={handleSetName}
             />
           ) : showDetail && selectedItem ? (
             <DetailPanel
