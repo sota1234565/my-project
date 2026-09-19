@@ -23,6 +23,50 @@
     <meta property="og:locale" content="ja_JP" />
     <meta name="twitter:card" content="summary" />
 
+    <!-- 構造化データ。検索エンジンに「藤沢市向けの無料ウェブアプリ」だと伝える。
+         alternateName に読みを入れているのは、「にわしん」で検索されたときに
+         庭心と結び付けてもらうため。 -->
+    <script type="application/ld+json">
+{
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "庭心",
+      "alternateName": [
+            "にわしん",
+            "庭心（にわしん）",
+            "Niwashin"
+      ],
+      "url": "https://niwashin-app.vercel.app/",
+      "description": "神奈川県藤沢市の木・花・雨庭を、地域の人が写真と地図で記録し、みんなで見守るためのウェブアプリです。写真から植物の名前を調べる機能もあります。",
+      "applicationCategory": "LifestyleApplication",
+      "operatingSystem": "Web",
+      "browserRequirements": "JavaScriptが有効なブラウザ",
+      "inLanguage": "ja",
+      "isAccessibleForFree": true,
+      "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "JPY"
+      },
+      "image": "https://niwashin-app.vercel.app/icon-512.png",
+      "areaServed": {
+            "@type": "City",
+            "name": "藤沢市",
+            "address": {
+                  "@type": "PostalAddress",
+                  "addressRegion": "神奈川県",
+                  "addressLocality": "藤沢市",
+                  "addressCountry": "JP"
+            }
+      },
+      "featureList": [
+            "まちの木・花・雨庭を写真と地図で記録する",
+            "写真から植物の名前を調べる",
+            "登録された緑地までの徒歩経路を表示する"
+      ]
+}
+    </script>
+
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
     <!-- Webフォント（見出し=Zen Kaku Gothic New / 本文=Noto Sans JP）。
