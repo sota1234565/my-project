@@ -24,7 +24,7 @@ async function reverseGeocode(lat, lng) {
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=ja`,
-      { headers: { 'User-Agent': 'NiwaGokoro-App' } }
+      { headers: { 'User-Agent': 'Niwashin-App' } }
     );
     const data = await res.json();
     const a = data.address || {};

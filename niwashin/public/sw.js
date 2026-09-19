@@ -1,6 +1,8 @@
 // 庭心 Service Worker
 // キャッシュ名のバージョンを上げると、古いキャッシュが破棄されて更新される
-const CACHE = 'niwagokoro-v4';
+const CACHE = 'niwashin-v5';
+// タイルキャッシュ名は旧表記のまま据え置く。改名すると activate で削除対象になり、
+// 利用者が貯めた地図タイル（20〜40MB）を再ダウンロードさせてしまうため。
 const TILE_CACHE = 'niwagokoro-tiles-v1';
 const TILE_LIMIT = 800; // 保存する地図タイルの上限（おおよそ20〜40MB）
 const CORE = ['/', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png'];

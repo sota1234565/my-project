@@ -5,7 +5,7 @@
 // キーは Vercel の環境変数 PLANTNET_API_KEY から読む。
 //
 // 置き場所メモ：VercelのRoot Directoryはリポジトリの根っこなので、
-// 関数もここ（根っこの api/）に置く必要がある。niwagokoro/api では認識されない。
+// 関数もここ（根っこの api/）に置く必要がある。niwashin/api では認識されない。
 
 const PLANTNET_ENDPOINT = 'https://my-api.plantnet.org/v2/identify/all';
 const MAX_RESULTS = 5;

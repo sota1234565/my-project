@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd niwashin && npm install && npm run build",
+  "outputDirectory": "niwashin/dist",
+  "installCommand": "echo 'install is handled inside buildCommand'"
+}
