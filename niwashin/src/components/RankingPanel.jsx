@@ -4,7 +4,18 @@ import { hasNgWord } from '../moderation';
 
 const NAME_MAX = 20;
 
-export default function RankingPanel({ items, users, currentUserId, onSelectItem, onSetName }) {
+export default function RankingPanel({
+  items,
+  users,
+  currentUserId,
+  myPoints = 0,
+  // 'no-points'（まだポイントが無い）/ 'opted-out'（自分で参加を取り消した）/ 'listed'
+  myRankingState = 'no-points',
+  onSelectItem,
+  onSetName,
+  onLeaveRanking,
+  onRejoinRanking,
+}) {
   const sortedBySupport = [...items].sort((a, b) => b.supporters.length - a.supporters.length);
   const sortedUsers = [...users].sort((a, b) => b.points - a.points);
 
@@ -28,6 +39,17 @@ export default function RankingPanel({ items, users, currentUserId, onSelectItem
     }
     onSetName(draft);
     setEditing(false);
+  }
+
+  function handleLeave() {
+    const ok = window.confirm(
+      'ランキングに自分を載せないようにします。\n\n'
+      + '・設定した名前は消えます\n'
+      + '・登録した緑地や観察記録は消えません\n'
+      + '・あとからいつでも戻せます\n\n'
+      + 'よろしいですか？'
+    );
+    if (ok) onLeaveRanking?.();
   }
 
   function getRankClass(i) {
@@ -93,6 +115,11 @@ export default function RankingPanel({ items, users, currentUserId, onSelectItem
           まだポイントを持っている人がいません。
         </div>
       )}
+      {sortedUsers.length > 0 && (
+        <div className="ranking-note-inline">
+          ポイントを持っている人だけが表示されます。
+        </div>
+      )}
       {sortedUsers.map((user, i) => {
         const isMe = user.id === currentUserId;
         return (
@@ -120,9 +147,16 @@ export default function RankingPanel({ items, users, currentUserId, onSelectItem
                 <>
                   <div className="user-name">{user.name}</div>
                   {isMe && (
-                    <button type="button" className="name-edit-btn" onClick={() => startEdit(user.name)}>
-                      ✏️ 名前を設定
-                    </button>
+                    <div className="my-row-actions">
+                      <button type="button" className="name-edit-btn" onClick={() => startEdit(user.name)}>
+                        ✏️ 名前を設定
+                      </button>
+                      {/* 間違えて名前を付けた人や、載りたくない人のための出口。
+                          登録した緑地や観察記録は消えない。 */}
+                      <button type="button" className="leave-ranking-btn" onClick={handleLeave}>
+                        ランキングに載せない
+                      </button>
+                    </div>
                   )}
                 </>
               )}
@@ -134,6 +168,31 @@ export default function RankingPanel({ items, users, currentUserId, onSelectItem
           </div>
         );
       })}
+
+      {/* 自分がランキングに出ていないときだけ、その理由と次にできることを出す。
+          黙って消えていると「バグ？」と思われるため、必ず理由を書く。 */}
+      {myRankingState === 'no-points' && (
+        <div className="my-ranking-note">
+          <div className="my-ranking-note-title">🌱 まだランキングに載っていません</div>
+          <div className="my-ranking-note-text">
+            緑地の登録・推し・観察の記録でポイントがたまると、ここに載り、
+            ニックネームを設定できるようになります。
+          </div>
+        </div>
+      )}
+
+      {myRankingState === 'opted-out' && (
+        <div className="my-ranking-note">
+          <div className="my-ranking-note-title">🙈 ランキングに載せない設定です</div>
+          <div className="my-ranking-note-text">
+            いまあなた（{myPoints}pt）はランキングに表示されていません。
+            登録した緑地や観察記録はそのまま残っています。
+          </div>
+          <button type="button" className="rejoin-ranking-btn" onClick={() => onRejoinRanking?.()}>
+            ランキングに戻る
+          </button>
+        </div>
+      )}
 
       {guide}
     </div>

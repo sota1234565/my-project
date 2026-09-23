@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ref, onValue, push, set } from 'firebase/database';
+import { ref, onValue, push, set, update } from 'firebase/database';
 import './App.css';
 import GreenMap from './components/GreenMap';
 import DetailPanel from './components/DetailPanel';
@@ -50,6 +50,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState(false);
   const [names, setNames] = useState({});          // { deviceId: ニックネーム }（Firebaseから）
+  const [hiddenUsers, setHiddenUsers] = useState({}); // { deviceId: true }＝ランキングに載らない人
   const [selectedId, setSelectedId] = useState(null);
   const [routeTarget, setRouteTarget] = useState(null); // 経路を表示中の緑地（nullで非表示）
   const [activeView, setActiveView] = useState('map');
@@ -96,10 +97,14 @@ export default function App() {
     const unsub = onValue(ref(db, 'users'), (snap) => {
       const val = snap.val() || {};
       const map = {};
+      const hidden = {};
       for (const [id, v] of Object.entries(val)) {
         if (v && typeof v.name === 'string') map[id] = v.name;
+        // 本人または管理者が「ランキングに載せない」を選んだ人
+        if (v && v.hidden === true) hidden[id] = true;
       }
       setNames(map);
+      setHiddenUsers(hidden);
     }, () => {});
     return () => unsub();
   }, []);
@@ -138,13 +143,35 @@ export default function App() {
     for (const o of Object.values(it.observations || {})) add(o?.userId, POINTS_PER_OBS);
   }
   const myPoints = pointsById[deviceId] || 0;
-  // 自分はまだ0ptでもランキングに出す（名前を設定する入口になるため）
-  if (!(deviceId in pointsById)) pointsById[deviceId] = 0;
 
-  // ランキング用の利用者一覧（ポイントを持つ人全員＋自分）
+  // ランキングに載せるのは「1pt以上あり」かつ「本人が参加を取り消していない」人だけ。
+  // ポイントは行動からしか増えないため、0pt は一度も参加していない人を意味する。
+  // 自分も例外ではなく、0pt のあいだは載らない（名前の設定もできない）。
   const users = Object.entries(pointsById)
+    .filter(([id, points]) => points > 0 && !hiddenUsers[id])
     .map(([id, points]) => ({ id, points, name: nameOf(id), avatar: id === deviceId ? '🌱' : '👤' }))
     .sort((a, b) => b.points - a.points);
+
+  // 管理画面用。ランキングに出ていない人（非表示にした人）も操作できるよう、
+  // ポイントを持つ人と名前を付けた人をすべて含める。
+  const adminUsers = Object.entries(
+    [...Object.keys(pointsById), ...Object.keys(names)]
+      .reduce((acc, id) => { acc[id] = true; return acc; }, {})
+  )
+    .map(([id]) => ({
+      id,
+      points: pointsById[id] || 0,
+      name: names[id] || '',
+      hidden: !!hiddenUsers[id],
+    }))
+    .sort((a, b) => b.points - a.points);
+
+  // 自分がいまどの状態かをランキング画面に伝える
+  const myRankingState = myPoints <= 0
+    ? 'no-points'      // まだポイントが無い
+    : hiddenUsers[deviceId]
+      ? 'opted-out'    // 自分で参加を取り消した
+      : 'listed';      // 載っている
 
   const filteredItems = items.filter(item => {
     if (activeFilter === 'all') return true;
@@ -212,6 +239,29 @@ export default function App() {
     const trimmed = (name || '').trim().slice(0, 20);
     try {
       await set(ref(db, `users/${deviceId}/name`), trimmed || null);
+      setSaveError(false);
+    } catch {
+      setSaveError(true);
+    }
+  }
+
+  // ランキングへの参加をやめる。名前も消す。
+  // 登録した緑地や観察記録は「まちの共有データ」なので消さない。
+  async function handleLeaveRanking() {
+    try {
+      // 親（users/自分）ごと書き換えるとルール上は管理者専用の操作になるため、
+      // 子のキーを個別に更新する。update は子パスごとに権限が判定される。
+      await update(ref(db, `users/${deviceId}`), { hidden: true, name: null });
+      setSaveError(false);
+    } catch {
+      setSaveError(true);
+    }
+  }
+
+  // ランキングに戻る（名前は消えたままなので、必要なら設定し直す）
+  async function handleRejoinRanking() {
+    try {
+      await set(ref(db, `users/${deviceId}/hidden`), null);
       setSaveError(false);
     } catch {
       setSaveError(true);
@@ -302,8 +352,12 @@ export default function App() {
               items={items}
               users={users}
               currentUserId={MY_ID}
+              myPoints={myPoints}
+              myRankingState={myRankingState}
               onSelectItem={handleSelectItem}
               onSetName={handleSetName}
+              onLeaveRanking={handleLeaveRanking}
+              onRejoinRanking={handleRejoinRanking}
             />
           ) : showDetail && selectedItem ? (
             <DetailPanel
@@ -467,7 +521,7 @@ export default function App() {
       {showAdmin && (
         <AdminPanel
           items={allItems}
-          names={names}
+          users={adminUsers}
           onClose={() => setShowAdmin(false)}
         />
       )}
