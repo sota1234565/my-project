@@ -201,16 +201,36 @@ export default function AdminPanel({ items, users = [], onClose }) {
                 {manageableUsers.length === 0 && (
                   <div className="admin-empty">まだ利用者がいません。</div>
                 )}
-                {manageableUsers.map(u => {
+                {manageableUsers.map((u, i) => {
                   const busy = busyId === u.id;
+                  const st = u.stats || { trees: 0, supports: 0, obs: 0, treeNames: [] };
                   return (
                     <div key={u.id} className="admin-user-row">
+                      {/* ポイントを大きく出す。「誰を外すか」を決める材料になるのは
+                          名前ではなく、何をした人かなので、内訳も添える。 */}
+                      <div className="admin-user-points">
+                        <span className="admin-user-rank">{u.hidden ? '—' : i + 1}</span>
+                        <span className="admin-user-pt">{u.points}</span>
+                        <span className="admin-user-pt-unit">pt</span>
+                      </div>
                       <div className="admin-user-body">
                         <div className="admin-user-name">
                           {u.name || <span className="admin-user-noname">（名前なし）</span>}
+                          {u.isMe && <span className="admin-user-me">自分</span>}
                           {u.hidden && <span className="admin-user-hidden">非表示</span>}
                         </div>
-                        <div className="admin-user-id">{u.points}pt ・ {u.id}</div>
+                        <div className="admin-user-stats">
+                          <span>🌱 登録 {st.trees}</span>
+                          <span>💚 推し {st.supports}</span>
+                          <span>📝 観察 {st.obs}</span>
+                        </div>
+                        {st.treeNames.length > 0 && (
+                          <div className="admin-user-trees">
+                            登録した緑地：{st.treeNames.join('、')}
+                            {st.trees > st.treeNames.length && ` ほか${st.trees - st.treeNames.length}件`}
+                          </div>
+                        )}
+                        <div className="admin-user-id">{u.id}</div>
                       </div>
                       <div className="admin-user-actions">
                         {u.name && (

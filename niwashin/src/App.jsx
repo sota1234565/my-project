@@ -136,11 +136,21 @@ export default function App() {
   // ポイントは保存せず、全データ（承認前も含む）から毎回計算する。
   // 登録 +30 / 推し +5 / 観察 +10。実際の行動からしか増えないのでズルができない。
   const pointsById = {};
+  // 管理画面用の内訳。ポイントだけでは「何をした人か」が分からないため、
+  // 登録・推し・観察の件数と、登録した緑地の名前を集めておく。
+  const statsById = {};
   const add = (id, n) => { if (id) pointsById[id] = (pointsById[id] || 0) + n; };
+  const bump = (id, key, label) => {
+    if (!id) return;
+    const st = statsById[id] || (statsById[id] = { trees: 0, supports: 0, obs: 0, treeNames: [] });
+    st[key] += 1;
+    if (label && st.treeNames.length < 3) st.treeNames.push(label);
+  };
   for (const it of allItems) {
     add(it.authorId, POINTS_PER_TREE);
-    for (const uid of Object.keys(it.supporters || {})) add(uid, POINTS_PER_SUPPORT);
-    for (const o of Object.values(it.observations || {})) add(o?.userId, POINTS_PER_OBS);
+    bump(it.authorId, 'trees', it.name);
+    for (const uid of Object.keys(it.supporters || {})) { add(uid, POINTS_PER_SUPPORT); bump(uid, 'supports'); }
+    for (const o of Object.values(it.observations || {})) { add(o?.userId, POINTS_PER_OBS); bump(o?.userId, 'obs'); }
   }
   const myPoints = pointsById[deviceId] || 0;
 
@@ -163,6 +173,8 @@ export default function App() {
       points: pointsById[id] || 0,
       name: names[id] || '',
       hidden: !!hiddenUsers[id],
+      isMe: id === deviceId,
+      stats: statsById[id] || { trees: 0, supports: 0, obs: 0, treeNames: [] },
     }))
     .sort((a, b) => b.points - a.points);
 

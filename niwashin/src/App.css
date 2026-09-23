@@ -2061,7 +2061,7 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
 /* ── 管理画面：利用者（ニックネーム）一覧 ── */
 .admin-user-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.8rem;
   padding: 0.75rem 0.9rem;
   border: 1px solid var(--border);
@@ -2071,7 +2071,61 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
 }
 .admin-user-body { flex: 1; min-width: 0; }
 .admin-user-name { font-family: var(--font-display); font-size: 1rem; font-weight: 700; }
-.admin-user-id { font-size: 0.68rem; color: var(--text-muted); font-family: ui-monospace, monospace; word-break: break-all; }
+/* 端末IDは判断材料にならないので、目立たせず折り返しも抑える */
+.admin-user-id {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  font-family: ui-monospace, monospace;
+  margin-top: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ポイントは「誰を外すか」を決める一番の材料なので大きく出す */
+.admin-user-points {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 0.35rem 0.2rem;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  flex-shrink: 0;
+}
+.admin-user-rank { font-size: 0.62rem; font-weight: 800; color: var(--text-muted); }
+.admin-user-pt { font-size: 1.05rem; font-weight: 900; color: var(--green-800); line-height: 1.1; }
+.admin-user-pt-unit { font-size: 0.58rem; font-weight: 700; color: var(--text-muted); }
+
+/* 何をした人かの内訳 */
+.admin-user-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-sub);
+  margin-top: 0.2rem;
+}
+
+.admin-user-trees {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-top: 0.2rem;
+}
+
+.admin-user-me {
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-pill);
+  background: var(--green-50);
+  color: var(--green-800);
+  font-size: 0.66rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
 
 /* ── 管理画面：観察記録の個別削除 ── */
 .admin-obs-list { margin: 0.4rem 0 0.6rem; display: flex; flex-direction: column; gap: 0.3rem; }
