@@ -54,7 +54,13 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
 .app {
   display: flex;
   flex-direction: column;
+  /* iOS Safari の 100vh は、下のツールバーに隠れる分まで含んだ「大きいほう」の
+     高さを返す。そのため中身が画面より背高になり、はみ出した部分が画面外に
+     取り残されてスクロールもできなくなる。
+     dvh は実際に見えている高さに追従するので、こちらを使う。
+     1行目は dvh に対応していない古いブラウザ向けのフォールバック。 */
   height: 100vh;
+  height: 100dvh;
 }
 
 /* ── Topbar ──
@@ -1833,6 +1839,14 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
     box-shadow: none;
     animation: none;
     padding-top: calc(env(safe-area-inset-top) + 66px);
+  }
+
+  /* タブバーは position: fixed で一覧・ランキングの上に重なっている。
+     スクロール領域の下にバーぶんの余白を足さないと、最後の1件が
+     バーの裏に隠れて読めないままになる。 */
+  .main.list-mode .sidebar-list,
+  .main.list-mode .ranking-view {
+    padding-bottom: calc(58px + env(safe-area-inset-bottom) + 12px);
   }
 
   .mobile-tab-bar {
