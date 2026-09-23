@@ -87,6 +87,53 @@ const USER_ICON = L.divIcon({
   popupAnchor: [0, -12],
 });
 
+// 地図の「表示領域の大きさ」を Leaflet に知らせ直す。
+//
+// Leaflet は生成された瞬間の大きさを覚えて、その範囲ぶんのタイルしか読み込まない。
+// ところがスマホでは、生成直後はまだ高さが確定していないことがある。
+// （Webフォントの読み込み、iOSのツールバーの出入り、100dvh の確定待ちなど）
+// その状態のまま覚えてしまうと、あとから領域が広がってもタイルが追加されず、
+// 下半分が灰色のまま残る。「何回か開き直すと直る」のはこれが理由で、
+// たまたま高さが先に確定した回だけ正しく描かれていた。通信の良し悪しではない。
+//
+// invalidateSize() は「大きさを測り直して、足りないタイルを読み込む」命令。
+// 大きさが変わりうる場面すべてで呼ぶことで、一発で全面が描かれるようにする。
+function KeepMapSized() {
+  const map = useMap();
+
+  useEffect(() => {
+    const el = map.getContainer();
+    const fix = () => {
+      try { map.invalidateSize({ animate: false }); } catch { /* 地図でアプリを落とさない */ }
+    };
+
+    // 初回。レイアウトが落ち着くまでに数フレームかかるため、間を置いて数回試す。
+    const timers = [0, 120, 400, 1000].map(ms => setTimeout(fix, ms));
+
+    // 以降は領域の大きさが変わるたびに呼ぶ。これで次の3つをまとめて拾える。
+    //  ・iOSのツールバーが出入りして高さが変わる
+    //  ・一覧やランキングに切り替えると地図が display:none になり、戻ると復活する
+    //  ・画面を回転させる
+    let ro = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(fix);
+      ro.observe(el);
+    }
+    // ResizeObserver が無い環境と、履歴を戻ってきたときの保険
+    window.addEventListener('orientationchange', fix);
+    window.addEventListener('pageshow', fix);
+
+    return () => {
+      timers.forEach(clearTimeout);
+      if (ro) ro.disconnect();
+      window.removeEventListener('orientationchange', fix);
+      window.removeEventListener('pageshow', fix);
+    };
+  }, [map]);
+
+  return null;
+}
+
 // 地図を安全に移動する。座標が不正（NaN）や、地図の大きさがまだ0のときにクラッシュしないようにする。
 function moveMap(map, lat, lng, zoom) {
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
@@ -335,6 +382,7 @@ export default function GreenMap({ items, selectedItem, onSelectItem, routeTarge
         {/* 地図データの出典表示。ライセンス上の義務なので消せないが、
             prefix={false} でライブラリの宣伝だけ省き、CSSで小さく目立たなくする。 */}
         <AttributionControl position="bottomright" prefix={false} />
+        <KeepMapSized />
         {/* 地理院タイルはズーム18まで。それ以上は拡大表示して操作できるようにする */}
         <TileLayer
           key={tileStyle}
