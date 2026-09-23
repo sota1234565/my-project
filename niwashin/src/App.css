@@ -54,7 +54,13 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
 .app {
   display: flex;
   flex-direction: column;
+  /* iOS Safari の 100vh は、下のツールバーに隠れる分まで含んだ「大きいほう」の
+     高さを返す。そのため中身が画面より背高になり、はみ出した部分が画面外に
+     取り残されてスクロールもできなくなる。
+     dvh は実際に見えている高さに追従するので、こちらを使う。
+     1行目は dvh に対応していない古いブラウザ向けのフォールバック。 */
   height: 100vh;
+  height: 100dvh;
 }
 
 /* ── Topbar ──
@@ -1833,6 +1839,26 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
     box-shadow: none;
     animation: none;
     padding-top: calc(env(safe-area-inset-top) + 66px);
+    /* .sidebar には flex-shrink: 0 が付いている。横並びのパソコンでは
+       「横幅が縮まない」の意味で正しいが、スマホでは .main が縦並びになるため
+       「高さが縮まない」の意味に変わってしまう。
+       そのため中身が画面より背高のまま縮まず、親の overflow: hidden で
+       切り取られ、スクロール自体が発生しなくなっていた。
+       ここで親の高さに収まるようにし、min-height: 0 で中身より小さくなることを
+       許可する（これが無いと flex は中身の高さより縮まない）。 */
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* タブバーは position: fixed で一覧・ランキングの上に重なっている。
+     スクロール領域の下にバーぶんの余白を足さないと、最後の1件が
+     バーの裏に隠れて読めないままになる。 */
+  .main.list-mode .sidebar-list,
+  .main.list-mode .ranking-view {
+    /* 親と同じ理由で、ここにも「中身より縮んでよい」ことを明示する。
+       これでこの要素が実際のスクロール領域になる。 */
+    min-height: 0;
+    padding-bottom: calc(58px + env(safe-area-inset-bottom) + 12px);
   }
 
   .mobile-tab-bar {
