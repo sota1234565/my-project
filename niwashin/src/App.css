@@ -627,6 +627,104 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
   box-shadow: 0 4px 12px rgba(45,106,79,0.4);
 }
 
+/* ── ランキングの自分の行・参加状態 ── */
+
+.my-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.6rem;
+  align-items: center;
+}
+
+/* 「載せない」は取り消し寄りの操作なので、名前設定より目立たせない */
+.leave-ranking-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.leave-ranking-btn:hover { color: var(--text-sub); }
+
+/* 一覧に自分が出ていない理由を説明する箱 */
+.my-ranking-note {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+
+.my-ranking-note-title {
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: var(--green-800);
+  margin-bottom: 0.35rem;
+}
+
+.my-ranking-note-text {
+  font-size: 0.8rem;
+  line-height: 1.7;
+  color: var(--text-sub);
+}
+
+.rejoin-ranking-btn {
+  margin-top: 0.7rem;
+  padding: 0.5rem 1rem;
+  border: 1.5px solid var(--green-700);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--green-800);
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.rejoin-ranking-btn:hover { background: var(--green-50); }
+
+.ranking-note-inline {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  padding: 0 0 0.6rem;
+}
+
+/* ── 管理画面：利用者の行 ── */
+
+.admin-user-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.admin-user-btn {
+  padding: 0.35rem 0.7rem;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text-sub);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.admin-user-btn:hover { border-color: var(--green-500); color: var(--green-700); }
+
+.admin-user-noname { color: var(--text-muted); font-weight: 500; }
+
+.admin-user-hidden {
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-pill);
+  background: var(--border);
+  color: var(--text-sub);
+  font-size: 0.66rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
 /* ── Ranking ── */
 .ranking-view {
   padding: 1.25rem;

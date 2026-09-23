@@ -6,7 +6,7 @@ import { GREEN_TYPES } from '../data/greenItems';
 
 // 承認・削除ができるのはデータベースのルールで許可された人だけ。
 // この画面を開けても、権限が無ければ操作は拒否される。
-export default function AdminPanel({ items, names = {}, onClose }) {
+export default function AdminPanel({ items, users = [], onClose }) {
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
   const [busyId, setBusyId] = useState(null);
@@ -88,6 +88,38 @@ export default function AdminPanel({ items, names = {}, onClose }) {
     setBusyId(null);
   }
 
+  // 利用者をランキングから外す。名前も消える。
+  // 本人の投稿（緑地・観察記録）は消さない。必要ならそれぞれの画面から個別に消す。
+  async function hideUser(uid, name) {
+    const label = name || `利用者 ${uid.slice(-4)}`;
+    if (!window.confirm(
+      `${label} をランキングから外します。\n\n`
+      + '・設定した名前は消えます\n'
+      + '・登録した緑地や観察記録は消えません\n'
+      + '・あとから戻せます\n\n'
+      + 'よろしいですか？'
+    )) return;
+    setBusyId(uid);
+    setError(null);
+    try {
+      await update(ref(db, `users/${uid}`), { hidden: true, name: null });
+    } catch {
+      setError('ランキングから外せませんでした。');
+    }
+    setBusyId(null);
+  }
+
+  async function unhideUser(uid) {
+    setBusyId(uid);
+    setError(null);
+    try {
+      await set(ref(db, `users/${uid}/hidden`), null);
+    } catch {
+      setError('ランキングに戻せませんでした。');
+    }
+    setBusyId(null);
+  }
+
   function copyUid() {
     navigator.clipboard?.writeText(user.uid).then(
       () => { setCopied(true); setTimeout(() => setCopied(false), 2000); },
@@ -98,7 +130,9 @@ export default function AdminPanel({ items, names = {}, onClose }) {
   const pending = items.filter(i => i.status !== 'approved');
   const approved = items.filter(i => i.status === 'approved');
   const list = tab === 'pending' ? pending : approved;
-  const namedUsers = Object.entries(names).filter(([, n]) => typeof n === 'string' && n.trim());
+  // 名前を付けた人だけでなく、ポイントを持つ人も対象にする
+  // （名前が無い人もランキングには載るため、そこから外せる必要がある）
+  const manageableUsers = users.filter(u => u.points > 0 || (u.name && u.name.trim()) || u.hidden);
 
   return (
     <div className="admin-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -156,7 +190,7 @@ export default function AdminPanel({ items, names = {}, onClose }) {
                 className={`admin-tab ${tab === 'users' ? 'active' : ''}`}
                 onClick={() => setTab('users')}
               >
-                利用者 {namedUsers.length}
+                利用者 {manageableUsers.length}
               </button>
             </div>
 
@@ -164,24 +198,51 @@ export default function AdminPanel({ items, names = {}, onClose }) {
 
             {tab === 'users' ? (
               <div className="admin-list">
-                {namedUsers.length === 0 && (
-                  <div className="admin-empty">ニックネームを設定している利用者はいません。</div>
+                {manageableUsers.length === 0 && (
+                  <div className="admin-empty">まだ利用者がいません。</div>
                 )}
-                {namedUsers.map(([uid, name]) => (
-                  <div key={uid} className="admin-user-row">
-                    <div className="admin-user-body">
-                      <div className="admin-user-name">{name}</div>
-                      <div className="admin-user-id">{uid}</div>
+                {manageableUsers.map(u => {
+                  const busy = busyId === u.id;
+                  return (
+                    <div key={u.id} className="admin-user-row">
+                      <div className="admin-user-body">
+                        <div className="admin-user-name">
+                          {u.name || <span className="admin-user-noname">（名前なし）</span>}
+                          {u.hidden && <span className="admin-user-hidden">非表示</span>}
+                        </div>
+                        <div className="admin-user-id">{u.points}pt ・ {u.id}</div>
+                      </div>
+                      <div className="admin-user-actions">
+                        {u.name && (
+                          <button
+                            className="admin-user-btn"
+                            disabled={busy}
+                            onClick={() => resetName(u.id, u.name)}
+                          >
+                            {busy ? '…' : '名前をリセット'}
+                          </button>
+                        )}
+                        {u.hidden ? (
+                          <button
+                            className="admin-user-btn"
+                            disabled={busy}
+                            onClick={() => unhideUser(u.id)}
+                          >
+                            {busy ? '…' : 'ランキングに戻す'}
+                          </button>
+                        ) : (
+                          <button
+                            className="admin-delete"
+                            disabled={busy}
+                            onClick={() => hideUser(u.id, u.name)}
+                          >
+                            {busy ? '…' : 'ランキングから外す'}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <button
-                      className="admin-delete"
-                      disabled={busyId === uid}
-                      onClick={() => resetName(uid, name)}
-                    >
-                      {busyId === uid ? '…' : '名前をリセット'}
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
             <div className="admin-list">

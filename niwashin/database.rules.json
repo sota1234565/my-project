@@ -21,9 +21,17 @@
     "users": {
       ".read": true,
       "$uid": {
+        ".write": "auth.token.email === 'sota2007710@gmail.com'",
         "name": {
           ".write": true,
           ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 20 && !newData.val().matches(/(死ね|しね|殺す|ころす|バカ|馬鹿|アホ|カス|クズ|キモ|ブス|デブ|ハゲ|ウザ|うざ|キチガイ|きちがい|ガイジ|池沼|糞|クソ|くそ|うんこ|ウンコ|ちんこ|チンコ|ちんちん|チンチン|まんこ|マンコ|おっぱい|オッパイ|セックス|せっくす|エロ|えろ|レイプ|売春|風俗|変態|へんたい|fuck|shit|bitch|asshole|dick|pussy|cock|porn|rape|nigger|faggot|cunt|whore|slut)/i)"
+        },
+        "hidden": {
+          ".write": true,
+          ".validate": "newData.isBoolean() && newData.val() === true"
+        },
+        "$other": {
+          ".validate": false
         }
       }
     }
