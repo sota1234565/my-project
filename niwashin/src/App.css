@@ -231,6 +231,14 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
   gap: 0.45rem;
 }
 
+/* 縦並びの flex では、中身が入りきらないと子要素が縮められる。
+   一覧は「縮めて詰め込む」のではなく「本来の高さのまま並べてスクロールする」
+   のが正しいので、直下の子（カード・説明・空状態）は縮まないようにする。
+   これが無いと、件数が増えたときに写真が線のように潰れる。 */
+.sidebar-list > * {
+  flex-shrink: 0;
+}
+
 /* ── Green Card（写真が主役） ── */
 .green-card {
   border-radius: var(--radius-lg);
@@ -627,6 +635,12 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
   display: flex;
   flex-direction: column;
   gap: 0;
+}
+
+/* 一覧と同じ理由（上の .sidebar-list > * のコメントを参照）。
+   順位の行が潰れないようにする。 */
+.ranking-view > * {
+  flex-shrink: 0;
 }
 
 .ranking-section-title {
