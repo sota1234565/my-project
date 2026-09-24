@@ -8,7 +8,7 @@ import UserRecordPanel from './components/UserRecordPanel';
 import AddGreenForm from './components/AddGreenForm';
 import AdminPanel from './components/AdminPanel';
 import LeafMark from './components/LeafMark';
-import { GREEN_TYPES } from './data/greenItems';
+import { GREEN_TYPES, CONDITION_LABELS } from './data/greenItems';
 import { db } from './firebase';
 import { getDeviceId } from './deviceId';
 
@@ -21,7 +21,6 @@ const FILTERS = [
   { key: 'needs_care', label: '⚠️ 要ケア' },
 ];
 
-const CONDITION_LABELS = { healthy: '健全', needs_care: '要ケア', poor: '不良' };
 
 // この端末の匿名ID。推し・観察記録・登録の「誰がやったか」はすべてこれで記録する。
 const deviceId = getDeviceId();
@@ -273,6 +272,17 @@ export default function App() {
     }
   }
 
+  // 緑地の状態を更新する。枝が折れた・手入れされた等は時間とともに変わるので、
+  // 気づいた人が直せるようにする（推しや観察記録と同じく、誰でも更新できる）。
+  async function handleSetCondition(itemId, condition) {
+    try {
+      await set(ref(db, `greenItems/${itemId}/condition`), condition);
+      setSaveError(false);
+    } catch {
+      setSaveError(true);
+    }
+  }
+
   // ニックネームを設定する（空なら削除）
   async function handleSetName(name) {
     const trimmed = (name || '').trim().slice(0, 20);
@@ -331,7 +341,7 @@ export default function App() {
       scientificName: data.scientificName ?? null,
       // 名前が写真判定によるものかどうか。推定を事実と混同しないための記録。
       aiIdentified: data.aiIdentified ?? false,
-      condition: 'healthy',
+      condition: data.condition || 'healthy',
       authorId: deviceId,
       status: 'pending',
       createdAt: Date.now(),
@@ -429,6 +439,7 @@ export default function App() {
               onSupport={handleSupport}
               onAddObservation={handleAddObservation}
               onShowRoute={handleShowRoute}
+              onSetCondition={handleSetCondition}
             />
           ) : (
             <>
