@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { GREEN_TYPES } from '../data/greenItems';
 import { getLocationHelp } from '../platform';
+import { GSI_ATTRIBUTION, TILE_STYLES, nextTileStyle, TILE_MAX_NATIVE_ZOOM, TILE_MAX_ZOOM } from '../tiles';
 
 const LOCATION_HELP = getLocationHelp();
 
@@ -79,6 +80,8 @@ export default function AddGreenForm({ onAdd, onClose }) {
     scientificName: '',
   });
   const [gpsStatus, setGpsStatus] = useState('idle');
+  // 場所を指定する地図の見た目（'pale'＝地図 / 'photo'＝航空写真）
+  const [tileStyle, setTileStyle] = useState('pale');
   const [addressLoading, setAddressLoading] = useState(false);
   const [pinPos, setPinPos] = useState(null);
   // nullのあいだは地図を動かさない（開いた直後は藤沢市全体が見える状態を保つ）
@@ -279,15 +282,28 @@ export default function AddGreenForm({ onAdd, onClose }) {
               >
                 <AttributionControl position="bottomright" prefix={false} />
                 <TileLayer
-                  url="https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png"
-                  attribution='<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">国土地理院</a>'
-                  maxNativeZoom={18}
-                  maxZoom={19}
+                  key={tileStyle}
+                  url={TILE_STYLES[tileStyle].url}
+                  attribution={GSI_ATTRIBUTION}
+                  maxNativeZoom={TILE_MAX_NATIVE_ZOOM}
+                  maxZoom={TILE_MAX_ZOOM}
                 />
                 <SetCenter center={mapCenter} />
                 <LocationPicker onPick={applyLocation} />
                 {pinPos && <Marker position={pinPos} />}
               </MapContainer>
+              {/* 航空写真に切り替えられるようにする。木や花は地図記号では表せないため、
+                  実際の樹冠や花壇を見ながら位置を決められたほうが正確に指せる。
+                  type="button" を明示しないと、フォーム内では送信ボタン扱いになる。 */}
+              <button
+                type="button"
+                className={`picker-style-toggle ${tileStyle === 'photo' ? 'on-photo' : ''}`}
+                onClick={() => setTileStyle(nextTileStyle)}
+                title={`${TILE_STYLES[tileStyle].label}に切り替え`}
+              >
+                <span className="picker-style-icon">{TILE_STYLES[tileStyle].icon}</span>
+                <span className="picker-style-label">{TILE_STYLES[tileStyle].label}</span>
+              </button>
               <div className="map-tap-hint">タップした場所にピンが立ち、住所が自動入力されます</div>
             </div>
           </div>

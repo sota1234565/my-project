@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import { GREEN_TYPES } from '../data/greenItems';
 import { getLocationHelp } from '../platform';
 import { googleMapsDirUrl, walkMinutes, formatDistance } from '../maps';
+import { GSI_ATTRIBUTION, TILE_STYLES, nextTileStyle, TILE_MAX_NATIVE_ZOOM, TILE_MAX_ZOOM } from '../tiles';
 
 // 端末は途中で変わらないので、一度だけ判定する
 const LOCATION_HELP = getLocationHelp();
@@ -17,23 +18,6 @@ const CONDITION_COLORS = {
 };
 
 const NEARBY_RADIUS_M = 500;
-
-// 地図タイルは国土地理院のものを使う。日本国内は公式測量に基づくため精度が高い。
-// 利用にあたり出典の表示が必要（下の attribution）。
-const GSI_ATTRIBUTION =
-  '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">国土地理院</a>';
-const TILE_STYLES = {
-  pale: {
-    label: '航空写真',
-    icon: '🛰',
-    url: 'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png',
-  },
-  photo: {
-    label: '地図',
-    icon: '🗺',
-    url: 'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',
-  },
-};
 
 function getDistance(lat1, lng1, lat2, lng2) {
   const R = 6371000;
@@ -383,13 +367,12 @@ export default function GreenMap({ items, selectedItem, onSelectItem, routeTarge
             prefix={false} でライブラリの宣伝だけ省き、CSSで小さく目立たなくする。 */}
         <AttributionControl position="bottomright" prefix={false} />
         <KeepMapSized />
-        {/* 地理院タイルはズーム18まで。それ以上は拡大表示して操作できるようにする */}
         <TileLayer
           key={tileStyle}
           attribution={GSI_ATTRIBUTION}
           url={TILE_STYLES[tileStyle].url}
-          maxNativeZoom={18}
-          maxZoom={19}
+          maxNativeZoom={TILE_MAX_NATIVE_ZOOM}
+          maxZoom={TILE_MAX_ZOOM}
         />
 
         {selectedItem && <FlyTo item={selectedItem} />}
@@ -525,7 +508,7 @@ export default function GreenMap({ items, selectedItem, onSelectItem, routeTarge
       {/* 地図と航空写真の切り替え */}
       <button
         className={`style-toggle ${tileStyle === 'photo' ? 'on-photo' : ''}`}
-        onClick={() => setTileStyle(s => (s === 'pale' ? 'photo' : 'pale'))}
+        onClick={() => setTileStyle(nextTileStyle)}
         title={`${TILE_STYLES[tileStyle].label}に切り替え`}
       >
         <span className="style-toggle-icon">{TILE_STYLES[tileStyle].icon}</span>
