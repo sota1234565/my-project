@@ -362,6 +362,11 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* 親（.sidebar）は縦並びの flex。min-height: 0 が無いと中身の高さより
+     縮まないため、はみ出した部分が切り取られてスクロールできなくなる。
+     一覧で起きたのと同じ原因。 */
+  flex: 1;
+  min-height: 0;
 }
 
 /* ボトムシートのつまみ。スマホでだけ出す（下の @media で display 切替） */
@@ -429,6 +434,8 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
 
 .detail-body {
   flex: 1;
+  /* 実際にスクロールするのはここ。上と同じ理由で min-height: 0 が要る。 */
+  min-height: 0;
   overflow-y: auto;
   padding: 1rem 1.25rem;
 }
@@ -627,6 +634,58 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
   box-shadow: 0 4px 12px rgba(45,106,79,0.4);
 }
 
+/* ── 住所の修正 ── */
+
+.addr-edit-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--green-700);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.addr-edit { margin: 0.5rem 0 0.9rem; }
+
+.addr-edit-input {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+}
+
+.addr-edit-actions { display: flex; gap: 0.4rem; margin-top: 0.4rem; }
+
+.addr-edit-save {
+  padding: 0.35rem 0.9rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--green-800);
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.addr-edit-cancel {
+  padding: 0.35rem 0.9rem;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text-sub);
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.addr-edit-hint { margin-top: 0.35rem; font-size: 0.7rem; color: var(--text-muted); }
+
 /* ── 市への通報の下書き ── */
 
 /* 入口のボタン。要ケア・不良のときだけ出る */
@@ -713,6 +772,28 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
   font-weight: 800;
   text-align: center;
   text-decoration: none;
+  cursor: pointer;
+}
+
+.report-details { margin-top: 0.8rem; }
+.report-details summary {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-sub);
+  cursor: pointer;
+  padding: 0.2rem 0;
+}
+.report-details .report-text { margin-top: 0.5rem; }
+
+.report-copyonly-btn {
+  margin-top: 0.5rem;
+  padding: 0.45rem 0.9rem;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text-sub);
+  font-size: 0.76rem;
+  font-weight: 700;
   cursor: pointer;
 }
 

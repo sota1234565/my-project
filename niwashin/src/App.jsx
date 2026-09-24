@@ -272,6 +272,19 @@ export default function App() {
     }
   }
 
+  // 住所を直す。自動取得はずれることがあり、現地にいる人がいちばん正確に知っている。
+  // 緯度経度（地図上の位置）は変えない。ここで直すのは表記だけ。
+  async function handleSetAddress(itemId, address) {
+    const trimmed = (address || '').trim().slice(0, 100);
+    if (!trimmed) return;
+    try {
+      await set(ref(db, `greenItems/${itemId}/location/address`), trimmed);
+      setSaveError(false);
+    } catch {
+      setSaveError(true);
+    }
+  }
+
   // 緑地の状態を更新する。枝が折れた・手入れされた等は時間とともに変わるので、
   // 気づいた人が直せるようにする（推しや観察記録と同じく、誰でも更新できる）。
   async function handleSetCondition(itemId, condition) {
@@ -403,6 +416,7 @@ export default function App() {
             onSelectItem={handleSelectItem}
             routeTarget={routeTarget}
             onClearRoute={handleClearRoute}
+            controlsHidden={showDetail}
           />
         )}
 
@@ -440,6 +454,7 @@ export default function App() {
               onAddObservation={handleAddObservation}
               onShowRoute={handleShowRoute}
               onSetCondition={handleSetCondition}
+              onSetAddress={handleSetAddress}
             />
           ) : (
             <>

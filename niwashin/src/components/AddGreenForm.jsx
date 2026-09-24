@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { GREEN_TYPES, CONDITIONS } from '../data/greenItems';
 import { getLocationHelp } from '../platform';
+import { reverseGeocode } from '../geocode';
 import { GSI_ATTRIBUTION, TILE_STYLES, nextTileStyle, TILE_MAX_NATIVE_ZOOM, TILE_MAX_ZOOM } from '../tiles';
 
 const LOCATION_HELP = getLocationHelp();
@@ -20,21 +21,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
-
-async function reverseGeocode(lat, lng) {
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=ja`,
-      { headers: { 'User-Agent': 'Niwashin-App' } }
-    );
-    const data = await res.json();
-    const a = data.address || {};
-    const parts = [a.prefecture, a.city || a.town || a.village, a.suburb || a.neighbourhood, a.road].filter(Boolean);
-    return parts.join('') || data.display_name || '';
-  } catch {
-    return '';
-  }
-}
 
 function LocationPicker({ onPick }) {
   useMapEvents({

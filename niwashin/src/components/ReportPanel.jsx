@@ -14,14 +14,30 @@ export default function ReportPanel({ item, onClose }) {
   const [copyFailed, setCopyFailed] = useState(false);
   const text = buildReportText(item, APP_URL);
 
-  async function handleCopy() {
+  // コピーとLINEを開くのを1回の操作にまとめる。
+  // 押した流れの中で開くのでポップアップ扱いにならず、手順も半分になる。
+  // コピーに失敗してもLINEは開く（文面は画面に出ているので手で写せる）。
+  async function handleCopyAndOpen() {
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+      setCopied(true);
+      setTimeout(() => setCopied(false), 4000);
+    } catch {
+      setCopyFailed(true);
+    }
+    window.open(FUJISAWA_LINE_URL, '_blank', 'noopener');
+    return ok;
+  }
+
+  async function handleCopyOnly() {
     setCopyFailed(false);
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      // 許可が無い・対応していない環境では、下の文面を手で選んでもらう
       setCopyFailed(true);
     }
   }
@@ -35,31 +51,29 @@ export default function ReportPanel({ item, onClose }) {
 
       <p className="report-lead">
         藤沢市は、街路樹や公園の樹木の不具合をLINEの「市民レポート」で受け付けています。
-        下の文面をコピーして、LINEで送ってください。
+        下のボタンで文面をコピーし、そのままLINEへ進めます。
       </p>
 
+      {/* 押す操作は1回。LINEに移ったあとにやることだけを残す。 */}
+      <div className="report-actions">
+        <button type="button" className="report-copy-btn" onClick={handleCopyAndOpen}>
+          {copied ? '✓ コピーしました。LINEへ →' : '📋 コピーして藤沢市LINEを開く'}
+        </button>
+      </div>
+
       <ol className="report-steps">
-        <li><b>文面をコピー</b>する（下のボタン）</li>
-        <li><b>藤沢市LINEを開く</b>（友だち追加がまだなら追加）</li>
         <li>メニューの<b>「市民レポート」</b>→「レポートを始める」</li>
-        <li>案内にそって<b>写真・位置情報</b>を送り、状況の欄に貼り付ける</li>
+        <li>案内にそって<b>写真・位置情報</b>を送る</li>
+        <li>状況の欄に<b>貼り付け</b>て送信</li>
       </ol>
 
-      <textarea className="report-text" value={text} readOnly rows={14} />
-
-      <div className="report-actions">
-        <button type="button" className="report-copy-btn" onClick={handleCopy}>
-          {copied ? '✓ コピーしました' : '📋 文面をコピー'}
+      <details className="report-details">
+        <summary>送られる文面を見る／手で直す</summary>
+        <textarea className="report-text" value={text} readOnly rows={14} />
+        <button type="button" className="report-copyonly-btn" onClick={handleCopyOnly}>
+          📋 文面だけコピー
         </button>
-        <a
-          className="report-line-btn"
-          href={FUJISAWA_LINE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          藤沢市LINEを開く →
-        </a>
-      </div>
+      </details>
 
       {copyFailed && (
         <div className="report-note report-note-warn">
