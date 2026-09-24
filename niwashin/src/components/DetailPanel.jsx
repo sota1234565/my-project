@@ -1,15 +1,9 @@
 import { useState } from 'react';
-import { GREEN_TYPES } from '../data/greenItems';
+import { GREEN_TYPES, CONDITIONS, CONDITION_LABELS } from '../data/greenItems';
 import { hasNgWord } from '../moderation';
 import { googleMapsDirUrl } from '../maps';
 
-const CONDITION_LABELS = {
-  healthy: '健全',
-  needs_care: '要ケア',
-  poor: '不良',
-};
-
-export default function DetailPanel({ item, currentUserId, onBack, onSupport, onAddObservation, onShowRoute, onDelete }) {
+export default function DetailPanel({ item, currentUserId, onBack, onSupport, onAddObservation, onShowRoute, onDelete, onSetCondition }) {
   const [obsText, setObsText] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [lightbox, setLightbox] = useState(null); // 全画面で見せる写真のURL（nullで閉じる）
@@ -42,18 +36,34 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
           <div className="detail-sci">{item.scientificName}</div>
         )}
         <div className="detail-meta">
-          <span
-            className="condition-badge"
-            style={{}}
-          >
-            <span className={`condition-badge condition-${item.condition}`}>
-              {CONDITION_LABELS[item.condition]}
-            </span>
+          <span className={`condition-badge condition-${item.condition}`}>
+            {CONDITION_LABELS[item.condition]}
           </span>
           <span style={{ fontSize: '0.75rem', color: '#777' }}>
             {item.location.address}
           </span>
         </div>
+
+        {/* 状態は時間とともに変わる（枝が折れた／手入れされた）。
+            気づいた人がその場で直せるようにする。見守るアプリの要。 */}
+        {onSetCondition && (
+          <div className="condition-edit">
+            <span className="condition-edit-label">いまの状態は？</span>
+            <div className="condition-edit-btns">
+              {Object.entries(CONDITIONS).map(([key, val]) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={`condition-edit-btn ${item.condition === key ? 'active' : ''}`}
+                  onClick={() => onSetCondition(item.id, key)}
+                  title={val.hint}
+                >
+                  {val.emoji} {val.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {/* 現地へ行く導線。地図に経路を描く／Googleマップで本物のナビへ */}
         <div className="route-btn-row">
           {onShowRoute && (

@@ -627,6 +627,44 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
   box-shadow: 0 4px 12px rgba(45,106,79,0.4);
 }
 
+/* ── 状態の変更（健全／要ケア／不良） ── */
+
+.condition-edit {
+  margin: 0.6rem 0 1rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+
+.condition-edit-label {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--text-sub);
+  margin-bottom: 0.45rem;
+}
+
+.condition-edit-btns { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
+.condition-edit-btn {
+  padding: 0.35rem 0.75rem;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.condition-edit-btn:hover:not(.active) { border-color: var(--green-500); color: var(--green-700); }
+.condition-edit-btn.active {
+  background: var(--green-800);
+  border-color: var(--green-800);
+  color: #fff;
+}
+
 /* ── 利用者の記録（登録した緑地・推し） ── */
 
 .user-ranking-item.tappable { cursor: pointer; }

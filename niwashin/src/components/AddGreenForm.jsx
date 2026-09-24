@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents, AttributionControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { GREEN_TYPES } from '../data/greenItems';
+import { GREEN_TYPES, CONDITIONS } from '../data/greenItems';
 import { getLocationHelp } from '../platform';
 import { GSI_ATTRIBUTION, TILE_STYLES, nextTileStyle, TILE_MAX_NATIVE_ZOOM, TILE_MAX_ZOOM } from '../tiles';
 
@@ -71,6 +71,8 @@ export default function AddGreenForm({ onAdd, onClose }) {
   // 学名・植栽年・高さ・タグは専門知識が要るため置かない。
   const [form, setForm] = useState({
     type: 'tree',
+    // 見た目の状態。既定は健全。手入れが要りそうなものはここで「要ケア」にする。
+    condition: 'healthy',
     name: '',
     address: '',
     lat: '',
@@ -229,6 +231,7 @@ export default function AddGreenForm({ onAdd, onClose }) {
     if (!form.name.trim()) return;
     onAdd({
       type: form.type,
+      condition: form.condition,
       name: form.name.trim(),
       location: {
         lat: parseFloat(form.lat) || FUJISAWA_CENTER[0],
@@ -267,6 +270,17 @@ export default function AddGreenForm({ onAdd, onClose }) {
           <div className="form-group">
             <label className="form-label">名前 *</label>
             <input className="form-input" name="name" placeholder="例：ソメイヨシノ" value={form.name} onChange={handleChange} required />
+          </div>
+
+          {/* 状態。枝折れや枯れかけを「要ケア」として記録できるようにする。
+              これが無いと、一覧の「⚠️ 要ケア」で絞り込んでも永遠に0件になる。 */}
+          <div className="form-group">
+            <label className="form-label">いまの状態</label>
+            <select className="form-select" name="condition" value={form.condition} onChange={handleChange}>
+              {Object.entries(CONDITIONS).map(([key, val]) => (
+                <option key={key} value={key}>{val.emoji} {val.label}（{val.hint}）</option>
+              ))}
+            </select>
           </div>
 
           {/* 地図タップで場所指定 */}
