@@ -4,6 +4,7 @@ import './App.css';
 import GreenMap from './components/GreenMap';
 import DetailPanel from './components/DetailPanel';
 import RankingPanel from './components/RankingPanel';
+import UserRecordPanel from './components/UserRecordPanel';
 import AddGreenForm from './components/AddGreenForm';
 import AdminPanel from './components/AdminPanel';
 import LeafMark from './components/LeafMark';
@@ -51,6 +52,9 @@ export default function App() {
   const [saveError, setSaveError] = useState(false);
   const [names, setNames] = useState({});          // { deviceId: ニックネーム }（Firebaseから）
   const [hiddenUsers, setHiddenUsers] = useState({}); // { deviceId: true }＝ランキングに載らない人
+  // { deviceId: true }＝「自分の記録を他の人にも見せる」を選んだ人。既定は非公開。
+  const [publicProfiles, setPublicProfiles] = useState({});
+  const [selectedUserId, setSelectedUserId] = useState(null); // 記録を表示している利用者
   const [selectedId, setSelectedId] = useState(null);
   const [routeTarget, setRouteTarget] = useState(null); // 経路を表示中の緑地（nullで非表示）
   const [activeView, setActiveView] = useState('map');
@@ -98,13 +102,17 @@ export default function App() {
       const val = snap.val() || {};
       const map = {};
       const hidden = {};
+      const open = {};
       for (const [id, v] of Object.entries(val)) {
         if (v && typeof v.name === 'string') map[id] = v.name;
         // 本人または管理者が「ランキングに載せない」を選んだ人
         if (v && v.hidden === true) hidden[id] = true;
+        // 本人が明示的に選んだときだけ true。値が無い人は非公開として扱う。
+        if (v && v.publicProfile === true) open[id] = true;
       }
       setNames(map);
       setHiddenUsers(hidden);
+      setPublicProfiles(open);
     }, () => {});
     return () => unsub();
   }, []);
@@ -177,6 +185,25 @@ export default function App() {
       stats: statsById[id] || { trees: 0, supports: 0, obs: 0, treeNames: [] },
     }))
     .sort((a, b) => b.points - a.points);
+
+  // 記録を表示している利用者。ランキングから外れた人でも、タップ済みなら表示を保つ。
+  const selectedUser = selectedUserId
+    ? {
+        id: selectedUserId,
+        name: nameOf(selectedUserId),
+        points: pointsById[selectedUserId] || 0,
+        isMe: selectedUserId === deviceId,
+      }
+    : null;
+
+  // その人の記録。items は「承認済み＋自分の承認待ち」なので、
+  // 他人の承認待ちがここに混ざることはない（絞り込みを足す必要がない）。
+  const selectedUserRegistered = selectedUserId
+    ? items.filter(it => it.authorId === selectedUserId)
+    : [];
+  const selectedUserSupported = selectedUserId
+    ? items.filter(it => it.supporters.includes(selectedUserId))
+    : [];
 
   // 自分がいまどの状態かをランキング画面に伝える
   const myRankingState = myPoints <= 0
@@ -264,6 +291,17 @@ export default function App() {
       // 親（users/自分）ごと書き換えるとルール上は管理者専用の操作になるため、
       // 子のキーを個別に更新する。update は子パスごとに権限が判定される。
       await update(ref(db, `users/${deviceId}`), { hidden: true, name: null });
+      setSaveError(false);
+    } catch {
+      setSaveError(true);
+    }
+  }
+
+  // 「自分の記録を他の人にも見せる」の切り替え。既定は非公開で、本人が選んだときだけ公開。
+  // 登録した場所の集合はその人の生活圏を推測させるため、勝手に公開しない。
+  async function handleSetPublicProfile(on) {
+    try {
+      await update(ref(db, `users/${deviceId}`), { publicProfile: on ? true : null });
       setSaveError(false);
     } catch {
       setSaveError(true);
@@ -359,17 +397,29 @@ export default function App() {
         )}
 
         <div className={`sidebar ${mobileTab === 'list' || mobileTab === 'ranking' || (showDetail && selectedItem) ? 'mobile-visible' : ''}`}>
-          {activeView === 'ranking' && !showDetail ? (
+          {activeView === 'ranking' && !showDetail && selectedUser ? (
+            <UserRecordPanel
+              user={selectedUser}
+              registered={selectedUserRegistered}
+              supported={selectedUserSupported}
+              isPublic={!!publicProfiles[selectedUser.id]}
+              onSelectItem={handleSelectItem}
+              onBack={() => setSelectedUserId(null)}
+            />
+          ) : activeView === 'ranking' && !showDetail ? (
             <RankingPanel
               items={items}
               users={users}
               currentUserId={MY_ID}
               myPoints={myPoints}
               myRankingState={myRankingState}
+              myPublicProfile={!!publicProfiles[deviceId]}
               onSelectItem={handleSelectItem}
+              onSelectUser={(u) => setSelectedUserId(u.id)}
               onSetName={handleSetName}
               onLeaveRanking={handleLeaveRanking}
               onRejoinRanking={handleRejoinRanking}
+              onSetPublicProfile={handleSetPublicProfile}
             />
           ) : showDetail && selectedItem ? (
             <DetailPanel
@@ -518,7 +568,7 @@ export default function App() {
         <button className={`mobile-tab-btn ${mobileTab === 'list' ? 'active' : ''}`} onClick={() => { setMobileTab('list'); setActiveView('map'); setShowDetail(false); }}>
           <span className="tab-icon">🌿</span>一覧
         </button>
-        <button className={`mobile-tab-btn ${mobileTab === 'ranking' ? 'active' : ''}`} onClick={() => { setMobileTab('ranking'); setActiveView('ranking'); setShowDetail(false); }}>
+        <button className={`mobile-tab-btn ${mobileTab === 'ranking' ? 'active' : ''}`} onClick={() => { setMobileTab('ranking'); setActiveView('ranking'); setShowDetail(false); setSelectedUserId(null); }}>
           <span className="tab-icon">🏆</span>ランキング
         </button>
       </nav>

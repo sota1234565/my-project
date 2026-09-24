@@ -11,10 +11,13 @@ export default function RankingPanel({
   myPoints = 0,
   // 'no-points'（まだポイントが無い）/ 'opted-out'（自分で参加を取り消した）/ 'listed'
   myRankingState = 'no-points',
+  myPublicProfile = false,
   onSelectItem,
+  onSelectUser,
   onSetName,
   onLeaveRanking,
   onRejoinRanking,
+  onSetPublicProfile,
 }) {
   const sortedBySupport = [...items].sort((a, b) => b.supporters.length - a.supporters.length);
   const sortedUsers = [...users].sort((a, b) => b.points - a.points);
@@ -50,6 +53,21 @@ export default function RankingPanel({
       + 'よろしいですか？'
     );
     if (ok) onLeaveRanking?.();
+  }
+
+  function handleTogglePublic() {
+    if (myPublicProfile) {
+      onSetPublicProfile?.(false);
+      return;
+    }
+    const ok = window.confirm(
+      '自分が登録した緑地と推しの一覧を、ほかの人も見られるようにします。\n\n'
+      + '【注意】登録した場所がまとまって見えるため、\n'
+      + '自宅の近くの木ばかり登録している場合は、\n'
+      + '住んでいるあたりが分かってしまうことがあります。\n\n'
+      + 'いつでも非公開に戻せます。公開しますか？'
+    );
+    if (ok) onSetPublicProfile?.(true);
   }
 
   function getRankClass(i) {
@@ -117,18 +135,22 @@ export default function RankingPanel({
       )}
       {sortedUsers.length > 0 && (
         <div className="ranking-note-inline">
-          ポイントを持っている人だけが表示されます。
+          ポイントを持っている人だけが表示されます。タップすると、その人の記録を見られます。
         </div>
       )}
       {sortedUsers.map((user, i) => {
         const isMe = user.id === currentUserId;
         return (
-          <div key={user.id} className={`user-ranking-item ${isMe ? 'is-me' : ''}`}>
+          <div
+            key={user.id}
+            className={`user-ranking-item ${isMe ? 'is-me' : ''} tappable`}
+            onClick={() => onSelectUser?.(user)}
+          >
             <div className={`rank-badge ${getRankClass(i)}`}>{i + 1}</div>
             <div className="user-avatar">{user.avatar}</div>
             <div className="user-name-wrap">
               {isMe && editing ? (
-                <form className="name-edit" onSubmit={submitName}>
+                <form className="name-edit" onSubmit={submitName} onClick={e => e.stopPropagation()}>
                   <input
                     className="name-edit-input"
                     value={draft}
@@ -146,10 +168,19 @@ export default function RankingPanel({
               ) : (
                 <>
                   <div className="user-name">{user.name}</div>
+                  {/* 行そのものが記録へのリンクなので、中のボタンは伝播を止める */}
                   {isMe && (
-                    <div className="my-row-actions">
+                    <div className="my-row-actions" onClick={e => e.stopPropagation()}>
                       <button type="button" className="name-edit-btn" onClick={() => startEdit(user.name)}>
                         ✏️ 名前を設定
+                      </button>
+                      {/* 自分の記録を他の人にも見せるかどうか。既定は非公開。 */}
+                      <button
+                        type="button"
+                        className={`public-toggle-btn ${myPublicProfile ? 'on' : ''}`}
+                        onClick={handleTogglePublic}
+                      >
+                        {myPublicProfile ? '🔓 記録を公開中' : '🔒 記録は非公開'}
                       </button>
                       {/* 間違えて名前を付けた人や、載りたくない人のための出口。
                           登録した緑地や観察記録は消えない。 */}
