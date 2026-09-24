@@ -362,10 +362,8 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* 親（.sidebar）は縦並びの flex。min-height: 0 が無いと中身の高さより
-     縮まないため、はみ出した部分が切り取られてスクロールできなくなる。
-     一覧で起きたのと同じ原因。 */
-  flex: 1;
+  /* 親の高さが確定していれば height: 100% で親いっぱいになる。
+     min-height: 0 は、縦並び flex の子が中身より縮めるようにするために要る。 */
   min-height: 0;
 }
 
@@ -2234,7 +2232,13 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
     top: auto;
     left: 0; right: 0;
     bottom: calc(58px + env(safe-area-inset-bottom));
-    max-height: 78vh;
+    /* 高さは max-height（上限）ではなく height（確定値）で決める。
+       上限だけだとシートの高さは「中身次第」になり、確定しない。すると中の
+       .detail-panel の height: 100% が基準を持てず、中身の高さのまま膨らんで
+       上限を超えた分が overflow: hidden で切り取られ、スクロールできなくなる。
+       ここを確定させて初めて .detail-body の overflow-y: auto が働く。
+       dvh を使うのは iOS のツールバーの出入りに追従させるため。 */
+    height: 72dvh;
     border-radius: 24px 24px 0 0;
     border-top: none;
     z-index: 800;
