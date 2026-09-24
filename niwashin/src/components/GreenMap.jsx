@@ -358,7 +358,7 @@ export default function GreenMap({ items, selectedItem, onSelectItem, routeTarge
     : [];
 
   return (
-    <div className="map-container">
+    <div className={`map-container ${controlsHidden ? 'detail-open' : ''}`}>
       <MapContainer
         center={[35.3386, 139.4875]}
         zoom={13}

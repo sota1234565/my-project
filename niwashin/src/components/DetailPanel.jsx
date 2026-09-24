@@ -33,10 +33,13 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
 
   return (
     <div className="detail-panel">
-      {/* スマホではボトムシートになるので、つまんで閉じられる印としてハンドルを置く */}
-      <button className="sheet-handle" onClick={onBack} aria-label="閉じる" />
-      <div className="detail-panel-header">
+      {/* スマホでは中身全体がスクロールする。そのとき戻る手段まで流れていかないよう、
+          つまみと「戻る」だけを上に貼り付けておく。 */}
+      <div className="detail-sticky-top">
+        <button className="sheet-handle" onClick={onBack} aria-label="閉じる" />
         <button className="back-btn" onClick={onBack}>← 一覧に戻る</button>
+      </div>
+      <div className="detail-panel-header">
         <div className="detail-id">{item.id}</div>
         <div className="detail-name">{typeInfo.emoji} {item.name}</div>
         {item.scientificName && (

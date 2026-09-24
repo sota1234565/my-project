@@ -2255,6 +2255,38 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
   .sidebar.mobile-visible .sheet-handle { display: block; }
   .sidebar.mobile-visible .detail-panel-header { background: var(--surface); padding-top: 0.5rem; }
 
+  /* これまでスクロールしていたのは写真から下（.detail-body）だけで、
+     名前・状態・ボタンが並ぶ上半分はスクロール領域の外にあった。
+     そこを触っても動かず「写真の上で滑らせないと反応しない」状態だった。
+     シート全体をスクロールさせ、中の .detail-body は素直に積むだけにする。 */
+  .sidebar.mobile-visible .detail-panel {
+    overflow-y: auto;
+    overscroll-behavior: contain; /* 端まで行っても後ろの地図を動かさない */
+  }
+  .sidebar.mobile-visible .detail-body {
+    flex: none;
+    overflow: visible;
+  }
+
+  /* 全体が流れると「戻る」まで画面外に行ってしまうので、そこだけ上に貼り付ける */
+  .sidebar.mobile-visible .detail-sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: var(--surface);
+    padding-top: 0.4rem;
+  }
+
+  /* 地理院タイルの出典は利用条件なので消さない。詳細を開いている間は
+     シートの裏に隠れてしまうため、上（浮いているバーのすぐ下）に移す。 */
+  .map-container.detail-open .leaflet-bottom.leaflet-right {
+    top: calc(env(safe-area-inset-top) + 64px);
+    bottom: auto;
+  }
+  .map-container.detail-open .leaflet-control-attribution {
+    margin-bottom: 0 !important;
+  }
+
   /* 一覧・ランキングは全画面。トップバーが浮いている分だけ上に余白を足す */
   .main.list-mode .map-container { display: none; }
   .main.list-mode .sidebar {
