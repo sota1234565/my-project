@@ -14,3 +14,9 @@ export function walkMinutes(distanceM) {
 export function formatDistance(distanceM) {
   return distanceM >= 1000 ? `${(distanceM / 1000).toFixed(1)}km` : `${Math.round(distanceM)}m`;
 }
+
+// 場所そのものを指すGoogleマップのリンク（経路ではなく地点）。
+// 通報の文面に入れると、受け取った市の担当者がその場所をすぐ開ける。
+export function googleMapsPlaceUrl(lat, lng) {
+  return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+}
