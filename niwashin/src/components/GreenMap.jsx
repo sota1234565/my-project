@@ -187,7 +187,10 @@ function FollowUser({ pos, following, onManualDrag }) {
   return null;
 }
 
-export default function GreenMap({ items, selectedItem, onSelectItem, routeTarget, onClearRoute }) {
+// controlsHidden: 詳細シートを開いている間は true。
+// 地図の上に浮いているボタン（航空写真・現在地・近くの緑地など）は
+// position: absolute でシートより手前に出てしまうため、まとめて隠す。
+export default function GreenMap({ items, selectedItem, onSelectItem, routeTarget, onClearRoute, controlsHidden = false }) {
   const [userPos, setUserPos] = useState(null);
   const [accuracy, setAccuracy] = useState(null);
   const [watching, setWatching] = useState(false);
@@ -506,26 +509,28 @@ export default function GreenMap({ items, selectedItem, onSelectItem, routeTarge
       )}
 
       {/* 地図と航空写真の切り替え */}
-      <button
+      {!controlsHidden && <button
         className={`style-toggle ${tileStyle === 'photo' ? 'on-photo' : ''}`}
         onClick={() => setTileStyle(nextTileStyle)}
         title={`${TILE_STYLES[tileStyle].label}に切り替え`}
       >
         <span className="style-toggle-icon">{TILE_STYLES[tileStyle].icon}</span>
         <span className="style-toggle-label">{TILE_STYLES[tileStyle].label}</span>
-      </button>
+      </button>}
 
       {/* 現在地ボタン */}
-      <button
-        className={`locate-btn ${watching ? 'watching' : ''} ${following ? 'following' : ''}`}
-        onClick={handleLocate}
-        title={!watching ? '現在地を表示' : following ? '追従を停止' : '現在地に戻る'}
-      >
-        {watching ? '🎯' : '📍'}
-      </button>
+      {!controlsHidden && (
+        <button
+          className={`locate-btn ${watching ? 'watching' : ''} ${following ? 'following' : ''}`}
+          onClick={handleLocate}
+          title={!watching ? '現在地を表示' : following ? '追従を停止' : '現在地に戻る'}
+        >
+          {watching ? '🎯' : '📍'}
+        </button>
+      )}
 
       {/* 近くの緑地パネル */}
-      {!routeTarget && userPos && nearbyItems.length > 0 && (
+      {!controlsHidden && !routeTarget && userPos && nearbyItems.length > 0 && (
         <div className="nearby-panel">
           <div className="nearby-title">
             📍 近くの緑地（{NEARBY_RADIUS_M}m以内）
@@ -544,13 +549,13 @@ export default function GreenMap({ items, selectedItem, onSelectItem, routeTarge
           })}
         </div>
       )}
-      {!routeTarget && userPos && nearbyItems.length === 0 && (
+      {!controlsHidden && !routeTarget && userPos && nearbyItems.length === 0 && (
         <div className="nearby-panel">
           <div className="nearby-title">📍 半径{NEARBY_RADIUS_M}m以内に緑地はありません</div>
         </div>
       )}
       {/* 経路カード：所要時間・距離・Googleマップへの引き渡し */}
-      {activeRoute && (
+      {!controlsHidden && activeRoute && (
         <div className="route-card">
           <button className="route-card-close" onClick={onClearRoute} title="経路を消す">✕</button>
           <div className="route-card-title">🚶 {routeTarget.name} まで</div>
@@ -581,7 +586,7 @@ export default function GreenMap({ items, selectedItem, onSelectItem, routeTarge
           )}
         </div>
       )}
-      {locError && (
+      {!controlsHidden && locError && (
         <div className="locate-error">
           <button className="locate-error-close" onClick={() => setLocError(null)} title="閉じる">✕</button>
           {locError === 'denied' && (

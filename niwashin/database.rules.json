@@ -8,6 +8,12 @@
           ".write": true,
           ".validate": "newData.isString() && newData.val().matches(/^(healthy|needs_care|poor)$/)"
         },
+        "location": {
+          "address": {
+            ".write": true,
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+          }
+        },
         "supporters": {
           "$uid": {
             ".write": true,

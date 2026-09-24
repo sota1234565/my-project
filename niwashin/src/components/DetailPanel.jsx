@@ -5,7 +5,7 @@ import { GREEN_TYPES, CONDITIONS, CONDITION_LABELS } from '../data/greenItems';
 import { hasNgWord } from '../moderation';
 import { googleMapsDirUrl } from '../maps';
 
-export default function DetailPanel({ item, currentUserId, onBack, onSupport, onAddObservation, onShowRoute, onDelete, onSetCondition }) {
+export default function DetailPanel({ item, currentUserId, onBack, onSupport, onAddObservation, onShowRoute, onDelete, onSetCondition, onSetAddress }) {
   const [obsText, setObsText] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [lightbox, setLightbox] = useState(null); // 全画面で見せる写真のURL（nullで閉じる）
@@ -13,6 +13,8 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
   // 市への通報の下書きを開いているか。状態を変えたら閉じる必要はない
   // （文面は item から毎回作り直されるため、常に最新になる）。
   const [showReport, setShowReport] = useState(false);
+  // 住所の修正。自動取得がずれたときに、現地の人が直せるようにする。
+  const [editAddr, setEditAddr] = useState(null); // null＝編集していない
   const typeInfo = GREEN_TYPES[item.type];
   const isSupported = item.supporters.includes(currentUserId);
 
@@ -47,7 +49,43 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
           <span style={{ fontSize: '0.75rem', color: '#777' }}>
             {item.location.address}
           </span>
+          {onSetAddress && editAddr === null && (
+            <button
+              type="button"
+              className="addr-edit-btn"
+              onClick={() => setEditAddr(item.location.address || '')}
+            >
+              住所を直す
+            </button>
+          )}
         </div>
+
+        {/* 自動取得の住所はずれることがある。現地にいる人がいちばん正確に知っているので
+            あとから直せるようにする。地図上の位置（緯度経度）は変えず、表記だけを直す。 */}
+        {onSetAddress && editAddr !== null && (
+          <form
+            className="addr-edit"
+            onSubmit={(e) => { e.preventDefault(); onSetAddress(item.id, editAddr); setEditAddr(null); }}
+          >
+            <input
+              className="addr-edit-input"
+              value={editAddr}
+              maxLength={100}
+              placeholder="例：神奈川県藤沢市羽鳥五丁目"
+              autoFocus
+              onChange={(e) => setEditAddr(e.target.value)}
+            />
+            <div className="addr-edit-actions">
+              <button type="submit" className="addr-edit-save">保存</button>
+              <button type="button" className="addr-edit-cancel" onClick={() => setEditAddr(null)}>
+                やめる
+              </button>
+            </div>
+            <div className="addr-edit-hint">
+              地図上の位置は変わりません。住所の表記だけを直します。
+            </div>
+          </form>
+        )}
 
         {/* 手入れが要りそうな状態のときだけ、市に伝える導線を出す。
             健全な木の通報は市の手間を増やすだけなので出さない。 */}
