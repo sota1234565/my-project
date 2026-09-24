@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import ReportPanel from './ReportPanel';
+import { isReportable } from '../report';
 import { GREEN_TYPES, CONDITIONS, CONDITION_LABELS } from '../data/greenItems';
 import { hasNgWord } from '../moderation';
 import { googleMapsDirUrl } from '../maps';
@@ -8,6 +10,9 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [lightbox, setLightbox] = useState(null); // 全画面で見せる写真のURL（nullで閉じる）
   const [obsError, setObsError] = useState(null);
+  // 市への通報の下書きを開いているか。状態を変えたら閉じる必要はない
+  // （文面は item から毎回作り直されるため、常に最新になる）。
+  const [showReport, setShowReport] = useState(false);
   const typeInfo = GREEN_TYPES[item.type];
   const isSupported = item.supporters.includes(currentUserId);
 
@@ -43,6 +48,18 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
             {item.location.address}
           </span>
         </div>
+
+        {/* 手入れが要りそうな状態のときだけ、市に伝える導線を出す。
+            健全な木の通報は市の手間を増やすだけなので出さない。 */}
+        {isReportable(item.condition) && (
+          showReport ? (
+            <ReportPanel item={item} onClose={() => setShowReport(false)} />
+          ) : (
+            <button type="button" className="report-open-btn" onClick={() => setShowReport(true)}>
+              📮 この木のことを市に伝える
+            </button>
+          )
+        )}
 
         {/* 状態は時間とともに変わる（枝が折れた／手入れされた）。
             気づいた人がその場で直せるようにする。見守るアプリの要。 */}

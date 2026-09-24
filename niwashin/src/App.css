@@ -627,6 +627,103 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
   box-shadow: 0 4px 12px rgba(45,106,79,0.4);
 }
 
+/* ── 市への通報の下書き ── */
+
+/* 入口のボタン。要ケア・不良のときだけ出る */
+.report-open-btn {
+  width: 100%;
+  margin: 0.2rem 0 0.9rem;
+  padding: 0.7rem 1rem;
+  border: 1.5px solid var(--sand-deep, #b08968);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--sand-deep, #b08968);
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.report-open-btn:hover { background: #fdf6ee; }
+
+.report-panel {
+  margin: 0.2rem 0 1rem;
+  padding: 0.9rem 1rem 1rem;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+
+.report-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+.report-title { font-family: var(--font-display); font-size: 0.95rem; font-weight: 900; color: var(--green-800); }
+.report-close {
+  border: none; background: none; cursor: pointer;
+  font-size: 0.9rem; color: var(--text-muted); padding: 0.1rem 0.3rem;
+}
+
+.report-lead { font-size: 0.78rem; line-height: 1.75; color: var(--text-sub); margin: 0.5rem 0 0.7rem; }
+
+.report-steps {
+  margin: 0 0 0.8rem;
+  padding-left: 1.2rem;
+  font-size: 0.76rem;
+  line-height: 1.9;
+  color: var(--text-sub);
+}
+.report-steps b { color: var(--green-800); }
+
+/* 送る中身をそのまま見せる。何が送られるか分からないまま
+   コピーさせないための表示なので、隠したり畳んだりしない。 */
+.report-text {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+  font-size: 0.74rem;
+  line-height: 1.7;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+  resize: vertical;
+}
+
+.report-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.7rem; }
+
+.report-copy-btn {
+  flex: 1;
+  min-width: 140px;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--green-800);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.report-line-btn {
+  flex: 1;
+  min-width: 140px;
+  padding: 0.6rem 1rem;
+  border: 1.5px solid var(--green-700);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--green-800);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.report-note {
+  margin-top: 0.7rem;
+  font-size: 0.72rem;
+  line-height: 1.8;
+  color: var(--text-muted);
+}
+.report-note-warn { color: var(--sand-deep, #b08968); font-weight: 700; }
+
 /* ── 状態の変更（健全／要ケア／不良） ── */
 
 .condition-edit {
