@@ -12,6 +12,12 @@
           "address": {
             ".write": true,
             ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+          },
+          "muniCd": {
+            ".validate": "!newData.exists() || (newData.isString() && newData.val().matches(/^[0-9]{5}$/))"
+          },
+          "muniName": {
+            ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 30)"
           }
         },
         "supporters": {

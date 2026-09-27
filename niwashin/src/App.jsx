@@ -10,7 +10,9 @@ import AdminPanel from './components/AdminPanel';
 import LeafMark from './components/LeafMark';
 import { GREEN_TYPES, CONDITION_LABELS } from './data/greenItems';
 import { db } from './firebase';
+import { MUNI_ATTRIBUTION } from './tiles';
 import { getDeviceId } from './deviceId';
+import { loadMapView } from './mapView';
 
 const VIEWS = { map: '地図', ranking: 'ランキング' };
 const FILTERS = [
@@ -126,6 +128,9 @@ export default function App() {
       ...it,
       condition: it.condition || 'healthy',
       tags: it.tags || [],
+      // 住所は保存されないことがある（自動取得に失敗したとき）。
+      // 表示側それぞれで気をつけるより、ここで形を揃えておく。
+      location: { ...it.location, address: it.location?.address || '住所は未設定' },
       // 写真は複数対応。古いデータ（photo単数）も配列に揃える。photo は表示用の「顔」。
       photos: Array.isArray(it.photos) ? it.photos : (it.photo ? [it.photo] : []),
       photo: it.photo || (Array.isArray(it.photos) ? it.photos[0] : null) || null,
@@ -551,8 +556,9 @@ export default function App() {
                 <section className="about-section">
                   <h2 className="about-title">庭心（にわしん）について</h2>
                   <p className="about-text">
-                    庭心は、神奈川県藤沢市の木・花・雨庭を、まちに暮らす人が写真と地図で記録し、
-                    みんなで見守るためのアプリです。
+                    庭心は、まちの木・花・雨庭を、そこに暮らす人が写真と地図で記録し、
+                    みんなで見守るためのアプリです。神奈川県藤沢市から始まり、
+                    いまは日本全国どこでも使えます。
                   </p>
                   <p className="about-text">
                     散歩の途中で気になった木や花を見つけたら、写真を撮って地図をタップするだけで登録できます。
@@ -569,7 +575,14 @@ export default function App() {
                     <li>現在地を表示して、近くの緑地を探す</li>
                     <li>気に入った緑地を「推し」として記録する</li>
                     <li>観察したことを記録して残す</li>
+                    <li>手入れが要りそうな木を、自治体の窓口に伝える</li>
                   </ul>
+                  {/* 使っているデータの出典。地図タイルと市区町村名のどちらも
+                      出典の表示が利用条件になっている。 */}
+                  <div className="about-credit">
+                    地図：<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener noreferrer">国土地理院</a>
+                    ／{MUNI_ATTRIBUTION}
+                  </div>
                 </section>
               </div>
             </>
@@ -603,6 +616,7 @@ export default function App() {
         <AddGreenForm
           onAdd={handleAddGreen}
           onClose={() => setShowAddForm(false)}
+          initialCenter={loadMapView()?.center || null}
         />
       )}
 

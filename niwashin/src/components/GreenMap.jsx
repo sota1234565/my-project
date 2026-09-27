@@ -7,6 +7,7 @@ import { GREEN_TYPES } from '../data/greenItems';
 import { getLocationHelp } from '../platform';
 import { googleMapsDirUrl, walkMinutes, formatDistance } from '../maps';
 import { GSI_ATTRIBUTION, TILE_STYLES, nextTileStyle, TILE_MAX_NATIVE_ZOOM, TILE_MAX_ZOOM } from '../tiles';
+import { JAPAN_CENTER, JAPAN_ZOOM, saveMapView, loadMapView, boundsOfItems } from '../mapView';
 
 // 端末は途中で変わらないので、一度だけ判定する
 const LOCATION_HELP = getLocationHelp();
@@ -114,6 +115,46 @@ function KeepMapSized() {
       window.removeEventListener('pageshow', fix);
     };
   }, [map]);
+
+  return null;
+}
+
+// 最初にどこを映すかを決め、そのあとは見ていた場所を覚え続ける。
+// 全国で使うので、特定の市の座標を初期値として持たない。
+function InitialView({ items }) {
+  const map = useMap();
+  const doneRef = useRef(false);
+
+  useEffect(() => {
+    if (doneRef.current) return;
+
+    // 1. 前回見ていた場所
+    const saved = loadMapView();
+    if (saved) {
+      doneRef.current = true;
+      map.setView(saved.center, saved.zoom, { animate: false });
+      return;
+    }
+
+    // 2. 登録されている緑地が全部入る範囲。
+    //    データの読み込みを待つので、items が空のあいだは何もしない。
+    const b = boundsOfItems(items);
+    if (!b) return;
+    doneRef.current = true;
+    try {
+      if (b.points) {
+        map.fitBounds(L.latLngBounds(b.points), { padding: [48, 48], maxZoom: 16, animate: false });
+      } else {
+        map.setView(b.center, b.zoom, { animate: false });
+      }
+    } catch { /* 地図移動でアプリ全体を落とさない */ }
+    // 3. どちらも無ければ MapContainer の初期値（日本全体）のまま
+  }, [items, map]);
+
+  // 見ていた場所を覚える。次に開いたときここから始まる。
+  useMapEvents({
+    moveend: () => saveMapView(map.getCenter(), map.getZoom()),
+  });
 
   return null;
 }
@@ -360,8 +401,8 @@ export default function GreenMap({ items, selectedItem, onSelectItem, routeTarge
   return (
     <div className={`map-container ${controlsHidden ? 'detail-open' : ''}`}>
       <MapContainer
-        center={[35.3386, 139.4875]}
-        zoom={13}
+        center={JAPAN_CENTER}
+        zoom={JAPAN_ZOOM}
         style={{ width: '100%', height: '100%' }}
         zoomControl={false}
         attributionControl={false}
@@ -370,6 +411,7 @@ export default function GreenMap({ items, selectedItem, onSelectItem, routeTarge
             prefix={false} でライブラリの宣伝だけ省き、CSSで小さく目立たなくする。 */}
         <AttributionControl position="bottomright" prefix={false} />
         <KeepMapSized />
+        <InitialView items={items} />
         <TileLayer
           key={tileStyle}
           attribution={GSI_ATTRIBUTION}
