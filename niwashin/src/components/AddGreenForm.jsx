@@ -9,8 +9,10 @@ import { GSI_ATTRIBUTION, TILE_STYLES, nextTileStyle, TILE_MAX_NATIVE_ZOOM, TILE
 
 const LOCATION_HELP = getLocationHelp();
 
-// 位置がまだ分からないときに表示する場所（藤沢市のあたり）
-const FUJISAWA_CENTER = [35.3386, 139.4875];
+// 場所がまだ何も分からないときに最初に映す範囲（日本全体）。
+// 全国で使うため、特定の市を初期値にしない。
+const JAPAN_CENTER = [36.5, 138.0];
+const JAPAN_ZOOM = 5;
 
 // 1本の木に登録できる写真の上限（1枚目=全体、以降=アップ）
 const MAX_PHOTOS = 4;
@@ -52,7 +54,9 @@ function SetCenter({ center }) {
   return null;
 }
 
-export default function AddGreenForm({ onAdd, onClose }) {
+// initialCenter: 地図画面で最後に見ていた場所。登録のたびに日本全体まで
+// 引き戻されないよう、直前に見ていたあたりから始める。
+export default function AddGreenForm({ onAdd, onClose, initialCenter = null }) {
   // 項目は、通りがかりの人がその場で答えられるものだけに絞る。
   // 学名・植栽年・高さ・タグは専門知識が要るため置かない。
   const [form, setForm] = useState({
@@ -71,8 +75,10 @@ export default function AddGreenForm({ onAdd, onClose }) {
   // 場所を指定する地図の見た目（'pale'＝地図 / 'photo'＝航空写真）
   const [tileStyle, setTileStyle] = useState('pale');
   const [addressLoading, setAddressLoading] = useState(false);
+  // 座標から判定した自治体。通報の窓口判定と、将来の地域別集計に使う。
+  const [geo, setGeo] = useState(null);
   const [pinPos, setPinPos] = useState(null);
-  // nullのあいだは地図を動かさない（開いた直後は藤沢市全体が見える状態を保つ）
+  // nullのあいだは地図を動かさない（開いた直後の表示範囲を保つ）
   const [mapCenter, setMapCenter] = useState(null);
   // 写真は複数持てる。photos[0] が全体写真（地図・詳細で表示される「顔」）、
   // 以降は葉や花のアップ（名前判定の精度を上げるため）。
@@ -193,8 +199,11 @@ export default function AddGreenForm({ onAdd, onClose }) {
     if (recenter) setMapCenter([lat, lng]);
     setForm(prev => ({ ...prev, lat: lat.toFixed(6), lng: lng.toFixed(6) }));
     setAddressLoading(true);
-    const address = await reverseGeocode(lat, lng);
-    setForm(prev => ({ ...prev, address }));
+    const geo = await reverseGeocode(lat, lng);
+    // 住所は利用者が手で直せるので form に置く。
+    // 市区町村コードは座標から決まるもので、手入力させるものではないので別に持つ。
+    setForm(prev => ({ ...prev, address: geo.address }));
+    setGeo({ muniCd: geo.muniCd, muniName: geo.muniName });
     setAddressLoading(false);
   }, []);
 
@@ -215,14 +224,25 @@ export default function AddGreenForm({ onAdd, onClose }) {
   function handleSubmit(e) {
     e.preventDefault();
     if (!form.name.trim()) return;
+    // 場所は必須。以前は未指定のとき藤沢市の座標を黙って入れていたが、
+    // 全国で使う以上それは「その人の木を藤沢に置く」ことになるので許さない。
+    const lat = parseFloat(form.lat);
+    const lng = parseFloat(form.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    const address = form.address.trim();
     onAdd({
       type: form.type,
       condition: form.condition,
       name: form.name.trim(),
       location: {
-        lat: parseFloat(form.lat) || FUJISAWA_CENTER[0],
-        lng: parseFloat(form.lng) || FUJISAWA_CENTER[1],
-        address: form.address.trim() || '藤沢市',
+        lat,
+        lng,
+        // 住所は空で保存しない（データベース側が1文字以上を要求するため）。
+        // 分からないときは省き、あとから「住所を直す」で入れてもらう。
+        ...(address ? { address } : {}),
+        ...(geo?.muniCd ? { muniCd: geo.muniCd } : {}),
+        ...(geo?.muniName ? { muniName: geo.muniName } : {}),
       },
       description: form.description.trim(),
       photo: photos[0] || null,
@@ -271,11 +291,11 @@ export default function AddGreenForm({ onAdd, onClose }) {
 
           {/* 地図タップで場所指定 */}
           <div className="form-group">
-            <label className="form-label">📍 地図をタップして場所を指定</label>
+            <label className="form-label">📍 地図をタップして場所を指定 *</label>
             <div className="location-map-wrap">
               <MapContainer
-                center={pinPos || mapCenter || FUJISAWA_CENTER}
-                zoom={14}
+                center={pinPos || mapCenter || initialCenter || JAPAN_CENTER}
+                zoom={pinPos || mapCenter || initialCenter ? 14 : JAPAN_ZOOM}
                 style={{ width: '100%', height: '320px' }}
                 zoomControl={true}
                 attributionControl={false}
@@ -304,7 +324,11 @@ export default function AddGreenForm({ onAdd, onClose }) {
                 <span className="picker-style-icon">{TILE_STYLES[tileStyle].icon}</span>
                 <span className="picker-style-label">{TILE_STYLES[tileStyle].label}</span>
               </button>
-              <div className="map-tap-hint">タップした場所にピンが立ち、住所が自動入力されます</div>
+              <div className="map-tap-hint">
+                {pinPos
+                  ? 'タップした場所にピンが立ち、住所が自動入力されます'
+                  : '⚠️ 場所がまだ指定されていません。地図をタップするか、下の「GPSで現在地を取得」を押してください'}
+              </div>
             </div>
           </div>
 
@@ -457,7 +481,9 @@ export default function AddGreenForm({ onAdd, onClose }) {
 
           <div className="form-actions">
             <button type="button" className="btn-secondary" onClick={onClose}>キャンセル</button>
-            <button type="submit" className="btn-primary">✅ 登録する (+30pt)</button>
+            <button type="submit" className="btn-primary" disabled={!pinPos || !form.name.trim()}>
+              ✅ 登録する (+30pt)
+            </button>
           </div>
         </form>
       </div>

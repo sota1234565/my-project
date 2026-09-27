@@ -74,7 +74,7 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
               className="addr-edit-input"
               value={editAddr}
               maxLength={100}
-              placeholder="例：神奈川県藤沢市羽鳥五丁目"
+              placeholder="例：〇〇県〇〇市〇〇町一丁目"
               autoFocus
               onChange={(e) => setEditAddr(e.target.value)}
             />

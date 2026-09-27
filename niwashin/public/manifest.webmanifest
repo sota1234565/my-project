@@ -1,7 +1,7 @@
 {
   "name": "庭心 - まちの緑を見守るアプリ",
   "short_name": "庭心",
-  "description": "藤沢市の木・花・雨庭を市民で記録し、見守るためのアプリ。",
+  "description": "まちの木・花・雨庭を、そこに暮らす人が記録し、見守るためのアプリ。日本全国で使えます。",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

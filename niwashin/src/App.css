@@ -2592,3 +2592,45 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
   /* タブバー・FABと重ならないように */
   .route-card { bottom: calc(72px + env(safe-area-inset-bottom)); right: 84px; }
 }
+
+/* 使っているデータの出典。目立たせる必要はないが、消してはいけない。 */
+.about-credit {
+  margin-top: 1.2rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.68rem;
+  line-height: 1.8;
+  color: var(--text-muted);
+}
+.about-credit a { color: inherit; }
+
+/* ── 通報：窓口の段組み ── */
+.report-tier { margin-top: 1rem; }
+.report-tier:first-of-type { margin-top: 0.6rem; }
+
+.report-tier-title {
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: var(--green-800);
+  margin-bottom: 0.4rem;
+}
+
+.report-channel {
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  margin-bottom: 0.5rem;
+}
+
+.report-channel-label { font-size: 0.8rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.3rem; }
+.report-channel-note { font-size: 0.74rem; line-height: 1.7; color: var(--text-sub); margin-bottom: 0.5rem; }
+.report-channel-caution { margin-top: 0.4rem; font-size: 0.7rem; color: var(--sand-deep, #b08968); line-height: 1.6; }
+
+/* いつ確認した情報かを添える。古くなったときに黙って間違っているより、気づけるほうがよい */
+.report-channel-src { margin-top: 0.45rem; font-size: 0.66rem; color: var(--text-muted); }
+.report-channel-src a { color: inherit; }
+
+.report-channel .report-copy-btn,
+.report-channel .report-line-btn,
+.report-channel .report-copyonly-btn { display: block; width: 100%; margin-top: 0.3rem; box-sizing: border-box; }

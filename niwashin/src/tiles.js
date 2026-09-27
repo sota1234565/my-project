@@ -26,3 +26,8 @@ export const nextTileStyle = (s) => (s === 'pale' ? 'photo' : 'pale');
 // 地理院タイルはズーム18まで。それ以上は拡大表示して操作できるようにする。
 export const TILE_MAX_NATIVE_ZOOM = 18;
 export const TILE_MAX_ZOOM = 19;
+
+// 市区町村名の表（src/data/muniNames.json）の出典。
+// 総務省統計局「市区町村別メッシュ・コード一覧」を CC BY 4.0 で利用している。
+// 出典の表示が利用条件なので、アプリ内のどこかに必ず出すこと。
+export const MUNI_ATTRIBUTION = '市区町村名：総務省統計局「市区町村別メッシュ・コード一覧」（CC BY 4.0）';
