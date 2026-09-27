@@ -24,11 +24,20 @@
 // としている。色の差は小さく保ち、印の邪魔をしない。
 //
 // 川も試したが、この大きさでは隅の染みにしか見えなかったので入れていない。
+//
+// ── 立体感について
+// 家や木を等角投影で描く案も作ったが、48pxでは何が描いてあるか分からない
+// 塊になり、印まで埋もれた。アイコンは40〜120pxで見られることが多いので、
+// 描き込むほど良くなるわけではない。
+// 代わりに、街区にわずかな厚みを付け、印に影を落としている。
+// 浮かせたい当のもの（印）を浮かせるほうが、背景を立体にするより効く。
 
 export const GREEN = '#1e4d38';  // 地。アプリの theme-color と同じ
 export const CREAM = '#faf7f0';  // 印。アプリの背景色と同じ
 export const BLOCK = '#24583f';  // 街区の面。地よりわずかに明るい
 export const ROAD  = '#2f6b4f';  // 道
+export const BLOCK_EDGE = '#1b4634';  // 街区の下端。厚みに見える
+export const BLOCK_LIFT = 1.6;        // 持ち上げ量（100の升目で）
 
 // 100×100 の升目での輪郭。上がふくらみ、下が尖る。
 export const BODY_PATH =
@@ -52,6 +61,10 @@ function cityMap() {
     for (let j = 0; j < YS.length - 1; j++) {
       const x = XS[i] + ROAD_GAP / 2, y = YS[j] + ROAD_GAP / 2;
       const w = XS[i + 1] - XS[i] - ROAD_GAP, h = YS[j + 1] - YS[j] - ROAD_GAP;
+      // 面の下にわずかにずらした暗い面を敷く。街区が地面から持ち上がって見える。
+      // 本物の等角投影も試したが、48pxでは何が描いてあるか分からなくなった。
+      // 小さくしても崩れない範囲の厚みに留めている。
+      out += `<rect x="${x}" y="${y + BLOCK_LIFT}" width="${w}" height="${h}" rx="1.6" fill="${BLOCK_EDGE}"/>`;
       out += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="1.6" fill="${BLOCK}"/>`;
     }
   }
@@ -81,9 +94,21 @@ export function iconSvg({ size = 512, scale = 0.62, rounded = true } = {}) {
 
   // idはページに埋め込まれたときにぶつからないよう、独自の名前にする
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="庭心">
-  <defs><clipPath id="niwashinIconClip"><rect width="${size}" height="${size}" rx="${r}"/></clipPath></defs>
+  <defs>
+    <clipPath id="niwashinIconClip"><rect width="${size}" height="${size}" rx="${r}"/></clipPath>
+    <filter id="niwashinIconShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="${size * 0.018}"/>
+    </filter>
+  </defs>
   <rect width="${size}" height="${size}" rx="${r}" fill="${GREEN}"/>
-  <g clip-path="url(#niwashinIconClip)"><g transform="scale(${s})">${cityMap()}</g></g>
+  <g clip-path="url(#niwashinIconClip)">
+    <g transform="scale(${s})">${cityMap()}</g>
+    <!-- 印の影。これで印そのものが地図の上に浮いて見える。
+         背景を立体にするより、浮かせたい当のものを浮かせるほうが効く。 -->
+    <g filter="url(#niwashinIconShadow)" opacity="0.45" transform="translate(${x + size * 0.012} ${y + size * 0.022}) scale(${u})">
+      <path d="${BODY_PATH}" fill="#0d2a1e"/>
+    </g>
+  </g>
   <g transform="translate(${x} ${y}) scale(${u})">
     <path d="${BODY_PATH}" fill="${CREAM}"/>
     <path d="${VEIN_PATH}" stroke="${GREEN}" stroke-width="${VEIN_WIDTH}" stroke-linecap="round" fill="none"/>
