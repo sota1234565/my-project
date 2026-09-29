@@ -2007,6 +2007,12 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
   margin-bottom: 1rem;
 }
 
+/* 全画面のフォーム（登録・管理）が開いているあいだは、背景の地図とトップバーを消す。
+   背景の地図の出典が半透明ごしに透けて重なり、トップバーが見出しに重なっていた。
+   フォームは自前の地図と見出しを持つので、背景側は隠してよい。 */
+.app.overlay-open .topbar,
+.app.overlay-open .map-container { display: none !important; }
+
 /* ── 地図の出典表示 ──
    ライセンス上、消すことはできない。読める状態を保ちつつ、
    小さく・薄くして操作の邪魔にならないようにする。 */
@@ -2241,7 +2247,9 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
     height: 72dvh;
     border-radius: 24px 24px 0 0;
     border-top: none;
-    z-index: 800;
+    /* Leaflet の出典は z-index:1000。シートを 800 にしていたので出典がシートの
+       上に抜けて重なっていた。出典より上へ置き、抜けないようにする。 */
+    z-index: 1100;
     overflow: hidden; /* 中身（detail-body）が自前でスクロールする */
     box-shadow: 0 -12px 40px rgba(18,38,28,0.24);
     animation: sheetUp 0.3s cubic-bezier(0.32,0.72,0,1);
@@ -2671,6 +2679,27 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
   box-sizing: border-box;
 }
 .phototl-caption { margin-top: 0.3rem; line-height: 1.5; }
+
+/* 写真を消す小さな×。枠の右上に重ねる。本人か管理者にだけ出る。 */
+.phototl-item { position: relative; }
+.phototl-del {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.phototl-del:hover { background: rgba(0,0,0,0.75); }
 .phototl-date { display: block; font-size: 0.66rem; font-weight: 800; color: var(--sand-deep, #b08968); }
 .phototl-text { display: block; font-size: 0.72rem; color: var(--text-sub); }
 
