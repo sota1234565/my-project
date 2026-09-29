@@ -2295,6 +2295,11 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
   .main.list-mode .sidebar {
     display: flex;
     position: static;
+    /* 一覧・ランキングでは、このサイドバーが flex の子になる。flex の子は
+       position: static でも z-index が効くため、詳細シート用に付けた z-index:1100 が
+       トップバー(1000)・タブバー(900)より上になり、バーを覆い隠していた。
+       ここで auto に戻し、固定バーが上に出るようにする。 */
+    z-index: auto;
     bottom: unset;
     max-height: none;
     border-radius: 0;
