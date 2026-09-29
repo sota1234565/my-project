@@ -3,7 +3,7 @@
     "greenItems": {
       ".read": true,
       "$id": {
-        ".write": "(!data.exists() && newData.child('status').val() === 'pending') || auth.token.email === 'sota2007710@gmail.com'",
+        ".write": "(!data.exists() && newData.child('status').val() === 'pending') || auth.token.email === 'sota2007710@gmail.com' || (data.exists() && !newData.exists() && data.child('status').val() === 'pending')",
         "condition": {
           ".write": true,
           ".validate": "newData.isString() && newData.val().matches(/^(healthy|needs_care|poor)$/)"
