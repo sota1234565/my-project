@@ -2634,3 +2634,65 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
 .report-channel .report-copy-btn,
 .report-channel .report-line-btn,
 .report-channel .report-copyonly-btn { display: block; width: 100%; margin-top: 0.3rem; box-sizing: border-box; }
+
+/* ── 定点観測：移り変わりのタイムライン ── */
+.phototl { margin-bottom: 0.6rem; }
+
+/* 横スクロールの帯。季節写真を時系列で並べる */
+.phototl-strip {
+  display: flex;
+  gap: 0.6rem;
+  overflow-x: auto;
+  padding-bottom: 0.4rem;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+.phototl-item {
+  flex: 0 0 auto;
+  width: 132px;
+  scroll-snap-align: start;
+}
+.phototl-photo {
+  width: 132px;
+  height: 132px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  cursor: pointer;
+  display: block;
+}
+.phototl-photo-loading { cursor: default; animation: phototlPulse 1.2s ease-in-out infinite; }
+@keyframes phototlPulse { 0%,100% { opacity: 0.5; } 50% { opacity: 0.9; } }
+.phototl-photo-missing {
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  padding: 0.4rem;
+  box-sizing: border-box;
+}
+.phototl-caption { margin-top: 0.3rem; line-height: 1.5; }
+.phototl-date { display: block; font-size: 0.66rem; font-weight: 800; color: var(--sand-deep, #b08968); }
+.phototl-text { display: block; font-size: 0.72rem; color: var(--text-sub); }
+
+/* 「今の様子を追加」 */
+.phototl-add { margin: 0.2rem 0 1.4rem; }
+.phototl-note {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.7rem;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  margin-bottom: 0.5rem;
+  background: var(--surface);
+  color: var(--text-main);
+}
+.phototl-add-hint { font-size: 0.78rem; font-weight: 800; color: var(--green-800); margin-bottom: 0.45rem; }
+.photo-btn.is-busy { opacity: 0.6; pointer-events: none; }
+

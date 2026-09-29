@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { ref, onValue } from 'firebase/database';
 import ReportPanel from './ReportPanel';
 import { isReportable } from '../report';
 import { GREEN_TYPES, CONDITIONS, CONDITION_LABELS } from '../data/greenItems';
 import { hasNgWord } from '../moderation';
 import { googleMapsDirUrl } from '../maps';
+import { db } from '../firebase';
+import { fileToCompressed } from '../image';
 
-export default function DetailPanel({ item, currentUserId, onBack, onSupport, onAddObservation, onShowRoute, onDelete, onSetCondition, onSetAddress }) {
+export default function DetailPanel({ item, currentUserId, onBack, onSupport, onAddObservation, onShowRoute, onDelete, onSetCondition, onSetAddress, onAddPhotoLog }) {
   const [obsText, setObsText] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [lightbox, setLightbox] = useState(null); // 全画面で見せる写真のURL（nullで閉じる）
@@ -15,6 +18,11 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
   const [showReport, setShowReport] = useState(false);
   // 住所の修正。自動取得がずれたときに、現地の人が直せるようにする。
   const [editAddr, setEditAddr] = useState(null); // null＝編集していない
+  // 定点観測の写真。重いので、この詳細を開いているあいだだけ読み込む。
+  // photoLogs/$id を購読し、閉じたら解除する（地図・一覧には載せない）。
+  const [photoLogs, setPhotoLogs] = useState(null); // null=読み込み中, {}=無し
+  const [photoNote, setPhotoNote] = useState('');
+  const [photoBusy, setPhotoBusy] = useState(false);
   const typeInfo = GREEN_TYPES[item.type];
   const isSupported = item.supporters.includes(currentUserId);
 
@@ -30,6 +38,48 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
     onAddObservation(item.id, obsText.trim());
     setObsText('');
   }
+
+  // この木の季節写真を、開いているあいだだけ購読する。
+  useEffect(() => {
+    setPhotoLogs(null);
+    const unsub = onValue(ref(db, `photoLogs/${item.id}`), (snap) => {
+      setPhotoLogs(snap.val() || {});
+    }, () => setPhotoLogs({}));
+    return () => unsub();
+  }, [item.id]);
+
+  // 「今の様子を追加」。写真を縮小して、メモとともに親へ渡す。
+  async function handlePickPhoto(e) {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file || !onAddPhotoLog) return;
+    setPhotoBusy(true);
+    try {
+      const photo = await fileToCompressed(file);
+      await onAddPhotoLog(item.id, { photo, note: photoNote });
+      setPhotoNote('');
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  // 写真つきの記録（photoId を持つ観察）を、写真の実体と結びつけて日付順に並べる。
+  // 登録時の写真を先頭に置き、そこからの移り変わりとして見せる。
+  const photoEntries = [
+    ...(item.photo ? [{ id: '__origin__', photo: item.photo, date: null, caption: '登録したときの様子', origin: true }] : []),
+    ...item.observations
+      .filter(o => o.photoId)
+      .map(o => ({
+        id: o.id,
+        photo: photoLogs ? photoLogs[o.photoId]?.photo : undefined, // undefined=まだ読み込み中
+        date: o.date,
+        caption: o.text,
+        userName: o.userName,
+      }))
+      .sort((a, b) => (a.date || '').localeCompare(b.date || '')),
+  ];
+  // テキストだけの観察記録（写真つきは上のタイムラインに出すので除く）
+  const textObservations = item.observations.filter(o => !o.photoId);
 
   return (
     <div className="detail-panel">
@@ -235,13 +285,76 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
           </button>
         </div>
 
+        {/* 定点観測：同じ木の移り変わり。季節ごとに撮った写真を日付順に並べる。 */}
+        <div className="section-title">📸 移り変わりの記録</div>
+        <div className="phototl">
+          {photoEntries.length <= 1 && (
+            <p className="no-obs">
+              まだ定点観測の写真はありません。季節ごとに撮ると、同じ木の移り変わりが見られます。
+            </p>
+          )}
+          {photoEntries.length > 1 && (
+            <div className="phototl-strip">
+              {photoEntries.map(e => (
+                <div key={e.id} className="phototl-item">
+                  {e.photo === undefined ? (
+                    // photoLogs をまだ読み込み中。枠だけ出しておく。
+                    <div className="phototl-photo phototl-photo-loading" />
+                  ) : e.photo ? (
+                    <img
+                      src={e.photo}
+                      alt=""
+                      className="phototl-photo"
+                      loading="lazy"
+                      onClick={() => setLightbox(e.photo)}
+                    />
+                  ) : (
+                    <div className="phototl-photo phototl-photo-missing">写真を読み込めませんでした</div>
+                  )}
+                  <div className="phototl-caption">
+                    {e.date && <span className="phototl-date">{e.date}</span>}
+                    <span className="phototl-text">{e.caption}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {onAddPhotoLog && (
+          <div className="phototl-add">
+            <input
+              className="phototl-note"
+              type="text"
+              maxLength={200}
+              placeholder="一言メモ（任意。例：桜が満開になりました）"
+              value={photoNote}
+              onChange={e => setPhotoNote(e.target.value)}
+              disabled={photoBusy}
+            />
+            <div className="phototl-add-hint">📸 今の様子を残す（+10pt）</div>
+            <div className="photo-btn-row">
+              <label className={`photo-btn ${photoBusy ? 'is-busy' : ''}`}>
+                {photoBusy ? 'アップロード中…' : '📷 写真を撮る'}
+                <input type="file" accept="image/*" capture="environment"
+                  disabled={photoBusy} onChange={handlePickPhoto} style={{ display: 'none' }} />
+              </label>
+              <label className={`photo-btn ${photoBusy ? 'is-busy' : ''}`}>
+                🖼 フォルダから選ぶ
+                <input type="file" accept="image/*"
+                  disabled={photoBusy} onChange={handlePickPhoto} style={{ display: 'none' }} />
+              </label>
+            </div>
+          </div>
+        )}
+
         {/* 観察記録 */}
         <div className="section-title">🔍 観察記録</div>
         <div className="obs-list">
-          {item.observations.length === 0 ? (
+          {textObservations.length === 0 ? (
             <p className="no-obs">まだ観察記録がありません。最初の記録を残しましょう！</p>
           ) : (
-            [...item.observations].reverse().map(obs => (
+            [...textObservations].reverse().map(obs => (
               <div key={obs.id} className="obs-item">
                 <span className="obs-user">{obs.userName}</span>
                 <span className="obs-date">{obs.date}</span>
