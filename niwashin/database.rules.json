@@ -28,7 +28,7 @@
         },
         "observations": {
           "$obsId": {
-            ".write": "!data.exists()",
+            ".write": "!data.exists() || (!newData.exists() && data.child('photoId').exists())",
             ".validate": "newData.hasChildren(['userId','text','date','createdAt']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 500 && !newData.child('text').val().matches(/(死ね|しね|殺す|ころす|バカ|馬鹿|アホ|カス|クズ|キモ|ブス|デブ|ハゲ|ウザ|うざ|キチガイ|きちがい|ガイジ|池沼|糞|クソ|くそ|うんこ|ウンコ|ちんこ|チンコ|ちんちん|チンチン|まんこ|マンコ|おっぱい|オッパイ|セックス|せっくす|エロ|えろ|レイプ|売春|風俗|変態|へんたい|fuck|shit|bitch|asshole|dick|pussy|cock|porn|rape|nigger|faggot|cunt|whore|slut)/i) && (!newData.child('photoId').exists() || newData.child('photoId').isString())"
           }
         }
@@ -59,7 +59,7 @@
       ".read": true,
       "$itemId": {
         "$photoId": {
-          ".write": "!data.exists()",
+          ".write": "!data.exists() || !newData.exists()",
           ".validate": "newData.hasChildren(['userId','photo','createdAt']) && newData.child('photo').isString() && newData.child('photo').val().length > 0 && newData.child('photo').val().length <= 400000"
         }
       }

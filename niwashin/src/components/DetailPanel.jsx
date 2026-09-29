@@ -8,7 +8,7 @@ import { googleMapsDirUrl } from '../maps';
 import { db } from '../firebase';
 import { fileToCompressed } from '../image';
 
-export default function DetailPanel({ item, currentUserId, onBack, onSupport, onAddObservation, onShowRoute, onDelete, onSetCondition, onSetAddress, onAddPhotoLog }) {
+export default function DetailPanel({ item, currentUserId, onBack, onSupport, onAddObservation, onShowRoute, onDelete, onSetCondition, onSetAddress, onAddPhotoLog, onDeletePhotoLog, isAdmin }) {
   const [obsText, setObsText] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [lightbox, setLightbox] = useState(null); // 全画面で見せる写真のURL（nullで閉じる）
@@ -75,6 +75,9 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
         date: o.date,
         caption: o.text,
         userName: o.userName,
+        userId: o.userId,
+        // 本人か管理者だけが消せる。登録時の写真（origin）は木の一部なので消せない。
+        canDelete: !!onDeletePhotoLog && (o.userId === currentUserId || isAdmin),
       }))
       .sort((a, b) => (a.date || '').localeCompare(b.date || '')),
   ];
@@ -297,6 +300,20 @@ export default function DetailPanel({ item, currentUserId, onBack, onSupport, on
             <div className="phototl-strip">
               {photoEntries.map(e => (
                 <div key={e.id} className="phototl-item">
+                  {e.canDelete && (
+                    <button
+                      type="button"
+                      className="phototl-del"
+                      title="この写真を消す"
+                      onClick={() => {
+                        if (window.confirm('この写真を消します。よろしいですか？')) {
+                          onDeletePhotoLog(item.id, e.id);
+                        }
+                      }}
+                    >
+                      ✕
+                    </button>
+                  )}
                   {e.photo === undefined ? (
                     // photoLogs をまだ読み込み中。枠だけ出しておく。
                     <div className="phototl-photo phototl-photo-loading" />

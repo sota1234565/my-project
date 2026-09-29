@@ -9,9 +9,10 @@ import AddGreenForm from './components/AddGreenForm';
 import AdminPanel from './components/AdminPanel';
 import LeafMark from './components/LeafMark';
 import { GREEN_TYPES, CONDITION_LABELS } from './data/greenItems';
-import { db } from './firebase';
+import { db, auth } from './firebase';
 import { MUNI_ATTRIBUTION } from './tiles';
 import { getDeviceId } from './deviceId';
+import { onAuthStateChanged } from 'firebase/auth';
 import { loadMapView } from './mapView';
 import { seasonLabel } from './image';
 
@@ -27,6 +28,7 @@ const FILTERS = [
 
 // この端末の匿名ID。推し・観察記録・登録の「誰がやったか」はすべてこれで記録する。
 const deviceId = getDeviceId();
+const ADMIN_EMAIL = 'sota2007710@gmail.com';
 const MY_ID = deviceId;
 
 // ポイントの配点。保存はせず、Firebase上の実データから毎回計算する（ズルができない）。
@@ -52,6 +54,9 @@ export default function App() {
   const [allItems, setAllItems] = useState([]);   // Firebaseから来る全データ
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState(false);
+  // 管理者としてログインしているか。木や写真記録の削除ボタンの出し分けに使う。
+  // 実際に削除できるかはデータベースのルールが決める（ここは表示の判断だけ）。
+  const [isAdmin, setIsAdmin] = useState(false);
   const [names, setNames] = useState({});          // { deviceId: ニックネーム }（Firebaseから）
   const [hiddenUsers, setHiddenUsers] = useState({}); // { deviceId: true }＝ランキングに載らない人
   // { deviceId: true }＝「自分の記録を他の人にも見せる」を選んだ人。既定は非公開。
@@ -95,6 +100,12 @@ export default function App() {
       setAllItems(arr);
       setLoading(false);
     }, () => setLoading(false));
+    return () => unsub();
+  }, []);
+
+  // 管理者ログインの監視。AdminPanel でログインすると全画面に反映される。
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => setIsAdmin(u?.email === ADMIN_EMAIL));
     return () => unsub();
   }, []);
 
@@ -318,9 +329,29 @@ export default function App() {
   // 承認後の削除は管理者が行う（データベースのルールでもそう制限している）。
   async function handleDeleteItem(itemId) {
     try {
-      await set(ref(db, `greenItems/${itemId}`), null);
+      // 木ごと消すときは、その木の定点観測の写真（photoLogs）も一緒に消す。
+      await update(ref(db), {
+        [`greenItems/${itemId}`]: null,
+        [`photoLogs/${itemId}`]: null,
+      });
       setSaveError(false);
       handleBack();
+    } catch {
+      setSaveError(true);
+    }
+  }
+
+  // 定点観測の写真1枚を消す。本人か管理者だけがボタンを見られる（表示はDetailPanel側）。
+  // 実際に消せるかはルールが決める：photoLogs は誰でも作成・削除でき、対の観察記録は
+  // 写真つき（photoId あり）のものだけ削除を許している。管理者は親ルールで何でも消せる。
+  // 写真と記録は同じキーの対なので、両方を1回の原子的な書き込みで消す。
+  async function handleDeletePhotoLog(itemId, key) {
+    try {
+      await update(ref(db), {
+        [`greenItems/${itemId}/observations/${key}`]: null,
+        [`photoLogs/${itemId}/${key}`]: null,
+      });
+      setSaveError(false);
     } catch {
       setSaveError(true);
     }
@@ -432,7 +463,7 @@ export default function App() {
   const pendingCount = items.filter(i => i.isMinePending).length;
 
   return (
-    <div className="app">
+    <div className={`app ${showAddForm || showAdmin ? 'overlay-open' : ''}`}>
       {/* トップバー。スマホでは地図の上に浮かぶガラス調のバーになる（CSS側で切り替え） */}
       <header className="topbar">
         <h1 className="brand" onClick={handleLogoTap}>
@@ -510,7 +541,9 @@ export default function App() {
               onShowRoute={handleShowRoute}
               onSetCondition={handleSetCondition}
               onSetAddress={handleSetAddress}
-              onDelete={selectedItem.isMinePending ? handleDeleteItem : null}
+              onDelete={(selectedItem.isMinePending || isAdmin) ? handleDeleteItem : null}
+              isAdmin={isAdmin}
+              onDeletePhotoLog={handleDeletePhotoLog}
             />
           ) : (
             <>
