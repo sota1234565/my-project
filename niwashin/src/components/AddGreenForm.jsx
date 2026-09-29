@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { GREEN_TYPES, CONDITIONS } from '../data/greenItems';
 import { getLocationHelp } from '../platform';
 import { reverseGeocode } from '../geocode';
+import { fileToCompressed } from '../image';
 import { GSI_ATTRIBUTION, TILE_STYLES, nextTileStyle, TILE_MAX_NATIVE_ZOOM, TILE_MAX_ZOOM } from '../tiles';
 
 const LOCATION_HELP = getLocationHelp();
@@ -143,34 +144,6 @@ export default function AddGreenForm({ onAdd, onClose, initialCenter = null }) {
       { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
     );
   }, []);
-
-  // 写真は共有データベースに載せるため、縮小・圧縮してから使う。
-  // 長辺1000pxまで縮め、JPEG品質0.6に。これで数十KB程度に収まる。
-  function fileToCompressed(file) {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const img = new Image();
-        img.onload = () => {
-          const MAX = 1000;
-          let { width, height } = img;
-          if (width > MAX || height > MAX) {
-            const scale = MAX / Math.max(width, height);
-            width = Math.round(width * scale);
-            height = Math.round(height * scale);
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.6));
-        };
-        img.onerror = () => resolve(ev.target.result);
-        img.src = ev.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
-  }
 
   async function handleAddPhoto(e) {
     const file = e.target.files[0];

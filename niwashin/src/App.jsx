@@ -13,6 +13,7 @@ import { db } from './firebase';
 import { MUNI_ATTRIBUTION } from './tiles';
 import { getDeviceId } from './deviceId';
 import { loadMapView } from './mapView';
+import { seasonLabel } from './image';
 
 const VIEWS = { map: '地図', ranking: 'ランキング' };
 const FILTERS = [
@@ -277,6 +278,40 @@ export default function App() {
     }
   }
 
+  // 定点観測：同じ木の「いまの様子」を写真で残す。
+  //
+  // 重い写真は photoLogs に置き、その木の詳細を開いたときだけ読み込む。
+  // greenItems は全員が地図を開くたびに丸ごと読むので、そこに季節写真を積むと
+  // 一度も開かない木の写真まで全員がダウンロードすることになる。それを避ける。
+  // （本来は Firebase Storage が正解だが、いまの規模ではこの分離で十分。）
+  //
+  // 一方、日付・投稿者・ポイント用の軽い記録は observations に置く。こちらは
+  // すでに全体購読に載っていて、ポイント集計もそのまま効く（写真は別なので軽い）。
+  // 写真と記録は同じキーで対にし、update で1回の原子的な書き込みにする。
+  async function handleAddPhotoLog(itemId, { photo, note }) {
+    if (!photo) return;
+    const key = push(ref(db, `photoLogs/${itemId}`)).key;
+    const date = new Date().toISOString().slice(0, 10);
+    const trimmedNote = (note || '').trim().slice(0, 200);
+    const obs = {
+      userId: deviceId,
+      text: trimmedNote || seasonLabel(date), // ルールが1文字以上を要求。空なら季節ラベル
+      date,
+      createdAt: Date.now(),
+      photoId: key,                            // これがあれば「写真つきの記録」
+    };
+    const rec = { userId: deviceId, photo, createdAt: Date.now() };
+    try {
+      await update(ref(db), {
+        [`greenItems/${itemId}/observations/${key}`]: obs,
+        [`photoLogs/${itemId}/${key}`]: rec,
+      });
+      setSaveError(false);
+    } catch {
+      setSaveError(true);
+    }
+  }
+
   // 住所を直す。自動取得はずれることがあり、現地にいる人がいちばん正確に知っている。
   // 緯度経度（地図上の位置）は変えない。ここで直すのは表記だけ。
   async function handleSetAddress(itemId, address) {
@@ -457,6 +492,7 @@ export default function App() {
               onBack={handleBack}
               onSupport={handleSupport}
               onAddObservation={handleAddObservation}
+              onAddPhotoLog={handleAddPhotoLog}
               onShowRoute={handleShowRoute}
               onSetCondition={handleSetCondition}
               onSetAddress={handleSetAddress}
