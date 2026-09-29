@@ -2277,15 +2277,10 @@ h1, h2, h3, .u-display { font-family: var(--font-display); letter-spacing: -0.02
     padding-top: 0.4rem;
   }
 
-  /* 地理院タイルの出典は利用条件なので消さない。詳細を開いている間は
-     シートの裏に隠れてしまうため、上（浮いているバーのすぐ下）に移す。 */
-  .map-container.detail-open .leaflet-bottom.leaflet-right {
-    top: calc(env(safe-area-inset-top) + 64px);
-    bottom: auto;
-  }
-  .map-container.detail-open .leaflet-control-attribution {
-    margin-bottom: 0 !important;
-  }
+  /* 出典は詳細シートを開くと下に隠れるが、上へ動かすと今度はトップバーや
+     木の名前に重なる。動かさず、隠れるに任せる。地図そのものを見る画面では
+     ちゃんと出ているし、「庭心について」にも常時の出典を置いてある
+     （地図：国土地理院 ／ 総務省）。ライセンス上はそれで満たせる。 */
 
   /* 一覧・ランキングは全画面。トップバーが浮いている分だけ上に余白を足す */
   .main.list-mode .map-container { display: none; }

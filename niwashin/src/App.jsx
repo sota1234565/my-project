@@ -312,6 +312,20 @@ export default function App() {
     }
   }
 
+  // 自分が登録した木を取り消す。ログインが無く、サーバー側では「本人か」を
+  // 確認できないため、安全に許せるのは「まだ承認前（pending）の木」だけ。
+  // 承認前の木は本人にしか見えず、他の人はまだ関わっていないので消しても害がない。
+  // 承認後の削除は管理者が行う（データベースのルールでもそう制限している）。
+  async function handleDeleteItem(itemId) {
+    try {
+      await set(ref(db, `greenItems/${itemId}`), null);
+      setSaveError(false);
+      handleBack();
+    } catch {
+      setSaveError(true);
+    }
+  }
+
   // 住所を直す。自動取得はずれることがあり、現地にいる人がいちばん正確に知っている。
   // 緯度経度（地図上の位置）は変えない。ここで直すのは表記だけ。
   async function handleSetAddress(itemId, address) {
@@ -496,6 +510,7 @@ export default function App() {
               onShowRoute={handleShowRoute}
               onSetCondition={handleSetCondition}
               onSetAddress={handleSetAddress}
+              onDelete={selectedItem.isMinePending ? handleDeleteItem : null}
             />
           ) : (
             <>
