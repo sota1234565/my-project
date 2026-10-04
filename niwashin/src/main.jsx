@@ -2,10 +2,15 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
+// 訪問者数・ページ閲覧数を数える（Vercel Web Analytics）。
+// Cookie を使わず個人を追跡しない。Vercel 上でのみ動き、画面には何も出さない。
+// ※Vercel の管理画面で Web Analytics を「オン」にして初めて計測が始まる。
+import { Analytics } from '@vercel/analytics/react'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />
+    <Analytics />
   </StrictMode>,
 )
 
